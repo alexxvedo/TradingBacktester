@@ -1,0 +1,44 @@
+#root {
+  margin: 0 0;
+  max-width: 100vw;
+  max-height: 100vh;
+}
+
+.container {
+  width: 100%;
+  height: 100%;
+}
+
+.chartArea {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+.operaciones {
+  width: 40vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: start;
+}
+
+.operaciones-botones {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-evenly;
+}
+
+.boton-buy {
+  background-color: rgb(159, 216, 171);
+}
+
+.boton-sell {
+  background-color: red;
+}
+
+.closePosition {
+  font-weight: 200;
+  cursor: pointer;
+}
