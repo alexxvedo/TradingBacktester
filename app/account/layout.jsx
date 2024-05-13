@@ -17,9 +17,8 @@ export default async function ({ children }) {
   } = await supabase.auth.getUser();
 
   return (
-    <div className="flex flex-row bg-zinc-950 max-h-screen">
-      <Sidebar user={user} />
-      <div className="flex-1 max-h-[100%] overflow-y-auto my-4">{children}</div>
+    <div className="flex min-h-screen min-w-full justify-center items-center">
+      {children}
     </div>
   );
 }

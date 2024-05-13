@@ -1,4 +1,6 @@
 import SesionCard from "@/components/SesionCard";
+import { Button } from "@nextui-org/button";
+import Link from "next/link";
 
 export default async function Sesiones() {
   const sesionsCards = [
@@ -93,9 +95,12 @@ export default async function Sesiones() {
   ];
 
   return (
-    <main className="flex w-full h-full flex-col max-h-[100vh] p-4 overflow-y-auto">
-      <div className="min-h-[5%] w-full flex justify-start items-center">
+    <main className="flex w-full h-full flex-col p-4  ">
+      <div className="min-h-[5%] w-full flex justify-between items-center">
         <h2 className="text-2xl font-bold">Sesiones</h2>
+        <Button>
+          <Link href="/backtesting">Nueva +</Link>
+        </Button>
       </div>
       <hr className="my-4 w-full" />
       <div className="w-full h-full grid grid-cols-3 gap-4">
