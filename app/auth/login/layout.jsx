@@ -7,7 +7,7 @@ export const metadata = {
   description: "Sesiones",
 };
 
-export default async function ({ children }) {
+export default function LoginLayout({ children }) {
   return (
     <div className="flex min-h-screen min-w-full justify-center items-center">
       {children}

@@ -8,7 +8,7 @@ export const metadata = {
   description: "Sesiones",
 };
 
-export default async function ({ children }) {
+export default function SessionLayout({ children }) {
   return (
     <div className="flex flex-row bg-zinc-950 max-h-screen">
       <Sidebar />

@@ -31,4 +31,6 @@ const StaticLineChart = memo(
   }
 );
 
+StaticLineChart.displayName = "StaticLineChart";
+
 export default StaticLineChart;

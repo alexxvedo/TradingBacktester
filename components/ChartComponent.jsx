@@ -146,6 +146,7 @@ export default function ChartComponent({ initialData }) {
     return () => clearInterval(intervalID);
   }, [
     initialData,
+    updateCount,
     isPaused,
     candleIndex,
     subIndex,

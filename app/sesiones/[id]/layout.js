@@ -7,7 +7,7 @@ export const metadata = {
   description: "Sesiones",
 };
 
-export default async function ({ children }) {
+export default function SessionIdLayout({ children }) {
   return (
     <div className="flex min-h-full min-w-full justify-center max-h-[100%] ">
       {children}
