@@ -1,13 +1,12 @@
 import { PrismaClient } from "@prisma/client";
-import { verify } from "jsonwebtoken";
-import { auth } from "@/auth";
+import { auth, currentUser } from "@clerk/nextjs/server";
 
 const prisma = new PrismaClient();
 
 export async function POST(req) {
-  const session = await auth();
+  const { userId } = await auth();
 
-  if (!session) {
+  if (!userId) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: {
@@ -17,7 +16,6 @@ export async function POST(req) {
   }
 
   try {
-    const decoded = verify(session.user.token, process.env.JWT_SECRET);
     const { sessionId, type, size, entryPrice } = await req.json();
 
     const operation = await prisma.operation.create({
@@ -50,9 +48,8 @@ export async function POST(req) {
 
 // Nueva función para manejar GET y recuperar todas las operaciones
 export async function GET(req) {
-  const session = await auth();
-
-  if (!session) {
+  const { userId } = await auth();
+  if (!userId) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: {
@@ -62,7 +59,6 @@ export async function GET(req) {
   }
 
   try {
-    const decoded = verify(session.user.token, process.env.JWT_SECRET);
     const { searchParams } = new URL(req.url);
     const sessionId = searchParams.get("sessionId");
 

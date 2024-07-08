@@ -1,13 +1,12 @@
 import { PrismaClient } from "@prisma/client";
-import { verify } from "jsonwebtoken";
-import { auth } from "@/auth";
+import { auth, currentUser } from "@clerk/nextjs/server";
 
 const prisma = new PrismaClient();
 
 export async function POST(req) {
-  const session = await auth();
-
-  if (!session) {
+  const { userId } = await auth();
+  console.log(userId);
+  if (!userId) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: {
@@ -16,13 +15,14 @@ export async function POST(req) {
     });
   }
 
+  console.log("Estoy aqui");
+
   try {
-    const decoded = verify(session.user.token, process.env.JWT_SECRET);
     const { title, description, accountSize } = await req.json();
 
     const sesion = await prisma.session.create({
       data: {
-        userId: decoded.userId,
+        userId: userId,
         title,
         description,
         date: new Date(),
@@ -56,10 +56,10 @@ export async function POST(req) {
   }
 }
 
-export async function GET(req) {
-  const session = await auth();
-
-  if (!session) {
+export async function GET() {
+  const { userId } = await auth();
+  console.log(userId);
+  if (!userId) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: {
@@ -69,10 +69,8 @@ export async function GET(req) {
   }
 
   try {
-    const decoded = verify(session.user.token, process.env.JWT_SECRET);
-
     const sessions = await prisma.session.findMany({
-      where: { userId: decoded.userId },
+      where: { userId: userId },
     });
 
     return new Response(JSON.stringify(sessions), {

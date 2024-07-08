@@ -7,7 +7,6 @@ import { useParams } from "next/navigation"; // Importar useParams
 import { createChart } from "lightweight-charts";
 import PositionCreator from "@/components/PositionCreator";
 import { Button } from "@nextui-org/button";
-import { processData } from "@/utils/dataParser/dataUtils"; // Importar processData
 
 export default function SessionPage() {
   const { id } = useParams(); // Usar useParams para obtener el id
@@ -47,7 +46,6 @@ export default function SessionPage() {
         `/api/data?start=${start.toISOString()}&end=${end.toISOString()}`
       );
       const data = await response.json();
-      console.log(data);
       setInitialData(data);
     } catch (error) {
       console.error("Failed to load data by date range:", error);
@@ -374,7 +372,7 @@ export default function SessionPage() {
             endDate={endDate}
             inline
             monthsShown={1}
-            availableDates={availableDates}
+            includeDates={availableDates}
             dateFormat="dd/MM/yyyy"
             placeholderText="Select Date Range"
           />

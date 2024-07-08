@@ -7,20 +7,10 @@ datasource db {
   url  	    = env("DATABASE_URL")
 }
 
-model user {
-  id        Int       @id @default(autoincrement())
-  username  String    @unique
-  password  String
-  email     String    @unique
-  role      String    @default("user")
-  createdAt DateTime  @default(now())
-
-  sessions  session[]
-}
 
 model session {
   id                 Int         @id @default(autoincrement())
-  userId             Int
+  userId             String
   title              String
   description        String
   date               DateTime
@@ -37,7 +27,6 @@ model session {
   accountSize        Float       @default(0)
   currentBalance     Float       @default(0)
 
-  user               user        @relation(fields: [userId], references: [id])
   operations         operation[]
 }
 

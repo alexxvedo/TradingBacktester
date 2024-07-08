@@ -1,13 +1,15 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import SesionCard from "@/components/Sesiones/SesionCard";
-import CreateSessionPopup from "@/components/Sesiones/CreateSessionPopup";
 import { Button } from "@nextui-org/button";
-import { signOut, useSession } from "next-auth/react";
+
+import { useAuth } from "@clerk/nextjs";
+import SesionCard from "@/components/Sesiones/SesionCard";
+
+import CreateSessionPopup from "@/components/Sesiones/CreateSesionPopup";
 
 export default function Sesiones() {
+  const { isLoaded, userId } = useAuth();
   const [sessions, setSessions] = useState([]);
   const [isLoading, setIsLoading] = useState(true); // Agregar estado de carga
   const [isOpen, setIsOpen] = useState(false);
@@ -15,18 +17,21 @@ export default function Sesiones() {
   const [description, setDescription] = useState("");
   const [accountSize, setAccountSize] = useState("100000");
   const router = useRouter(); // Usar useRouter en un componente de cliente
-  const { data: session, update } = useSession(); // useSession()
+
+  if (!isLoaded || !userId) {
+    return null;
+  }
 
   useEffect(() => {
-    if (session) fetchSessions();
-  }, [session]);
+    if (userId) fetchSessions();
+  }, [userId]);
 
   const fetchSessions = async () => {
     try {
       const res = await fetch("/api/sessions");
       const data = await res.json();
       if (res.status === 401) {
-        console.log("Unauthorized");
+        console.log(data.error);
         signOut(); // Cerrar sesión si no está autorizado
       }
       //console.log(data);
@@ -39,8 +44,6 @@ export default function Sesiones() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-
-    const token = session.user.token;
 
     try {
       const res = await fetch("/api/sessions", {
@@ -92,20 +95,20 @@ export default function Sesiones() {
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Title"
               required
-              className="p-2 border rounded"
+              className="p-2 border rounded text-black"
             />
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Description"
               required
-              className="p-2 border rounded"
+              className="p-2 border rounded text-black"
             />
             <select
               id="account_size"
               value={accountSize}
               onChange={handleAccountSizeChange}
-              className="flex items-center justify-center w-full"
+              className="flex items-center justify-center w-full text-black"
             >
               <option className="flex items-center justify-center" value="5000">
                 5000€

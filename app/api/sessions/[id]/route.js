@@ -1,14 +1,13 @@
-// /api/sessions/[id]/index.js
 import { PrismaClient } from "@prisma/client";
-import { auth } from "@/auth";
+import { auth, currentUser } from "@clerk/nextjs/server";
 
 const prisma = new PrismaClient();
 
 export async function PUT(req, { params }) {
   const { id } = params;
-  const session = await auth();
+  const { userId } = await auth();
 
-  if (!session) {
+  if (!userId) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: {
@@ -50,9 +49,9 @@ export async function PUT(req, { params }) {
 
 export async function GET(req, { params }) {
   const { id } = params;
-  const session = await auth();
+  const { userId } = await auth();
 
-  if (!session) {
+  if (!userId) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: {
