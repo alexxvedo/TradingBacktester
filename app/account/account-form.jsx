@@ -6,61 +6,10 @@ import { Button } from "@nextui-org/button";
 import Link from "next/link";
 
 export default function AccountForm({ user }) {
-  const supabase = createClient();
   const [loading, setLoading] = useState(true);
   const [fullname, setFullname] = useState("");
   const [username, setUsername] = useState("");
   const [avatar_url, setAvatarUrl] = useState("");
-
-  const getProfile = useCallback(async () => {
-    try {
-      setLoading(true);
-
-      const { data, error, status } = await supabase
-        .from("profiles")
-        .select(`full_name, username, avatar_url`)
-        .eq("id", user?.id)
-        .single();
-
-      if (error && status !== 406) {
-        throw error;
-      }
-
-      if (data) {
-        setFullname(data.full_name);
-        setUsername(data.username);
-        setAvatarUrl(data.avatar_url);
-      }
-    } catch (error) {
-      alert("Error loading user data!");
-    } finally {
-      setLoading(false);
-    }
-  }, [user, supabase]);
-
-  useEffect(() => {
-    getProfile();
-  }, [user, getProfile]);
-
-  async function updateProfile({ fullname, username, avatar_url }) {
-    try {
-      setLoading(true);
-
-      const { error } = await supabase.from("profiles").upsert({
-        id: user?.id,
-        full_name: fullname,
-        username: username,
-        avatar_url,
-        updated_at: new Date().toISOString(),
-      });
-      if (error) throw error;
-      alert("Profile updated!");
-    } catch (error) {
-      alert("Error updating the data!");
-    } finally {
-      setLoading(false);
-    }
-  }
 
   return (
     <div className="flex flex-col min-w-[20%] min-h-full justify-center gap-8 items-center p-12 bg-zinc-900 rounded-2xl">
