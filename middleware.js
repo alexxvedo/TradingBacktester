@@ -22,10 +22,7 @@ export default auth((req) => {
   if (isAuthRoute) {
     if (isLoggedIn) {
       return Response.redirect(
-        new URL(
-          "/sesiones",
-          `${req.nextUrl.origin}${req.nextUrl.pathname}`
-        ).toString(),
+        new URL("/sesiones", `${req.nextUrl.origin}`).toString(),
         302
       );
     }
@@ -38,10 +35,7 @@ export default auth((req) => {
 
     if (expiresTimestamp && currentTimestamp > expiresTimestamp) {
       return Response.redirect(
-        new URL(
-          "/auth/login",
-          `${req.nextUrl.origin}${req.nextUrl.pathname}`
-        ).toString(),
+        new URL("/auth/login", `${req.nextUrl.origin}`).toString(),
         302
       );
     }
@@ -50,10 +44,7 @@ export default auth((req) => {
 
   if (!isLoggedIn && !isPublicRoute) {
     return Response.redirect(
-      new URL(
-        "/auth/login",
-        `${req.nextUrl.origin}${req.nextUrl.pathname}`
-      ).toString(),
+      new URL("/auth/login", `${req.nextUrl.origin}`).toString(),
       302
     );
   }
