@@ -25,7 +25,7 @@ export async function POST(req) {
   }
 
   const token = sign({ userId: user.id }, process.env.JWT_SECRET, {
-    expiresIn: "1h",
+    expiresIn: "2d",
   });
 
   return new Response(
