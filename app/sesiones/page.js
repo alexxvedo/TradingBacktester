@@ -18,13 +18,13 @@ export default function Sesiones() {
   const [accountSize, setAccountSize] = useState("100000");
   const router = useRouter(); // Usar useRouter en un componente de cliente
 
-  if (!isLoaded || !userId) {
-    return null;
-  }
-
   useEffect(() => {
     if (userId) fetchSessions();
   }, [userId]);
+
+  if (!isLoaded || !userId) {
+    return null;
+  }
 
   const fetchSessions = async () => {
     try {

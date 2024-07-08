@@ -10,10 +10,9 @@ import ArrowRight from "@/public/arrow_right.svg";
 
 export default function Sidebar() {
   const { userId } = useAuth();
+  const [open, setOpen] = useState(false);
 
   if (!userId) return null;
-
-  const [open, setOpen] = useState(false);
 
   const widthClass = open ? "w-1/6" : "w-[6%]";
 
