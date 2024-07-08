@@ -4,10 +4,13 @@ import { signIn } from "next-auth/react";
 import { Button } from "@nextui-org/button";
 import { Input } from "@nextui-org/input";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const [loadingLogin, setLoadingLogin] = useState(false);
   const [error, setError] = useState(null);
+
+  const router = useRouter();
 
   const handleLogin = async (event) => {
     event.preventDefault();
@@ -28,7 +31,7 @@ export default function LoginPage() {
 
     if (res.ok) {
       console.log("Client: User authenticated successfully");
-      window.location.href = "/sesiones";
+      router.push("/sesiones");
     } else {
       console.error("Client: Login failed", res);
       setError(res.error || "Login failed");
