@@ -3,6 +3,8 @@ import Credentials from "next-auth/providers/credentials";
 
 const SECRET_KEY = process.env.JWT_SECRET; // Asegúrate de tener una clave secreta para firmar el JWT
 
+console.log("NEXTAUTH_URL:", process.env.NEXTAUTH_URL);
+
 export const { handlers, signIn, signOut, auth, update } = NextAuth({
   providers: [
     Credentials({
