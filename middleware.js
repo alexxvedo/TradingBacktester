@@ -1,19 +1,57 @@
-import { updateSession } from "@/utils/supabase/middleware";
+import { auth } from "@/auth";
 
-export async function middleware(request) {
-  // update user's auth session
-  return await updateSession(request);
-}
+export default auth((req) => {
+  const isLoggedIn = !!req.auth;
+  const { nextUrl } = req;
+
+  const isPublicRoute =
+    nextUrl.pathname === "/auth/login" ||
+    nextUrl.pathname === "/auth/signup" ||
+    nextUrl.pathname === "/";
+
+  const isApiAuthRoute = nextUrl.pathname.startsWith("/api/auth");
+  const isAuthRoute =
+    nextUrl.pathname === "/auth/login" || nextUrl.pathname === "/auth/signup";
+
+  const isProtectedRoute = nextUrl.pathname.startsWith("/sesiones");
+
+  if (isApiAuthRoute) {
+    return null;
+  }
+
+  if (isAuthRoute) {
+    if (isLoggedIn) {
+      return Response.redirect(
+        new URL("/sesiones", req.nextUrl).toString(),
+        302
+      );
+    }
+    return null;
+  }
+
+  if (isProtectedRoute && isLoggedIn) {
+    const expiresTimestamp = new Date(req.auth.expires).getTime() / 1000;
+    const currentTimestamp = Date.now() / 1000;
+
+    if (expiresTimestamp && currentTimestamp > expiresTimestamp) {
+      return Response.redirect(
+        new URL("/auth/login", req.nextUrl).toString(),
+        302
+      );
+    }
+    return null;
+  }
+
+  if (!isLoggedIn && !isPublicRoute) {
+    return Response.redirect(
+      new URL("/auth/login", req.nextUrl).toString(),
+      302
+    );
+  }
+
+  return null;
+});
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * Feel free to modify this pattern to include more paths.
-     */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
-  ],
+  matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
 };

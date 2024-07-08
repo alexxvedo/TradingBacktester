@@ -1,11 +1,9 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { createClient } from "@/utils/supabase/client";
-import { User } from "@nextui-org/react";
+import { User, user } from "@nextui-org/react";
 import { Avatar } from "@nextui-org/react";
 
 export default function AvatarComponent({ url, size, username, open }) {
-  const supabase = createClient();
   const [avatarUrl, setAvatarUrl] = useState(url);
 
   useEffect(() => {
@@ -19,32 +17,27 @@ export default function AvatarComponent({ url, size, username, open }) {
         }
         const url = URL.createObjectURL(data);
         setAvatarUrl(url);
+        console.log(url);
       } catch (error) {
         console.log("Error downloading image: ", error);
       }
     }
 
     if (url) downloadImage(url);
-  }, [url, supabase]);
+  }, [url]);
 
   return (
     <div className="flex items-center">
-      {avatarUrl ? (
-        open ? (
-          <User
-            name={username}
-            avatarProps={{
-              src: avatarUrl,
-            }}
-            size={size}
-          />
-        ) : (
-          <div>
-            <Avatar isBordered color="default" src={avatarUrl} isFocusable />
-          </div>
-        )
+      {open ? (
+        <User
+          name={username}
+          avatarProps={{
+            src: avatarUrl,
+          }}
+          size={size}
+        />
       ) : (
-        <User />
+        <Avatar src={avatarUrl} name={username} size={size} />
       )}
     </div>
   );

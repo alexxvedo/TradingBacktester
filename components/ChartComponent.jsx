@@ -170,7 +170,6 @@ export default function ChartComponent({ initialData }) {
               max="120"
               value={candlePerSecond}
               onChange={(e) => setCandlePerSecond(e.target.value)}
-              
             />
           </div>
         </div>

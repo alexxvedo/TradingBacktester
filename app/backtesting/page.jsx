@@ -10,7 +10,7 @@ export default function Backtesting() {
   useEffect(() => {
     const fetchData = async () => {
       const response = await axios.get(
-        "/data/EURUSD_Candlestick_1_s_BID_10.05.2024-10.05.2024.csv"
+        "/data/EURUSD_Candlestick_1_s_BID_13.05.2024-13.05.2024.csv"
       );
       const processedData = processData(response.data);
       setData(processedData);

@@ -8,7 +8,5 @@ export default async function Account() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  console.log(user.id);
-
   return <AccountForm user={user} />;
 }

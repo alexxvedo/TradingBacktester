@@ -1,7 +1,7 @@
 import { Inter } from "next/font/google";
 import "./globals.css";
-import Sidebar from "@/components/Sidebar";
 import { NextUIProvider } from "@nextui-org/react";
+import AuthWrapper from "./auth_wrapper";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -14,7 +14,10 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className="dark">
       <body className={`${inter.className}`}>
-        <NextUIProvider>{children}</NextUIProvider>
+        <AuthWrapper>
+          {" "}
+          <NextUIProvider>{children}</NextUIProvider>
+        </AuthWrapper>
       </body>
     </html>
   );

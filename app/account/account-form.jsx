@@ -1,6 +1,5 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import { createClient } from "@/utils/supabase/client";
 import AvatarComponent from "./avatarComponent";
 import { Input } from "@nextui-org/input";
 import { Button } from "@nextui-org/button";
