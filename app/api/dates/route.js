@@ -15,8 +15,6 @@ export async function GET() {
     });
   }
 
-  console.log("hola");
-
   try {
     const dates = await prisma.$queryRaw`
         SELECT DISTINCT DATE(timestamp) as date
@@ -24,7 +22,6 @@ export async function GET() {
         ORDER BY date ASC
       `;
 
-    console.log(dates);
     return new Response(JSON.stringify(dates.map((data) => data.date)), {
       status: 200,
       headers: {

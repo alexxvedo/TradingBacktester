@@ -233,11 +233,6 @@ export default function PositionCreator({
         {!fetchingPositions ? (
           <ul>
             {history.map((order) => {
-              console.log(
-                order.type.toUpperCase(),
-                order.entryPrice.toFixed(5)
-              );
-
               return (
                 <li key={order.id}>
                   {order.type.toUpperCase()} {order.size} at{" "}

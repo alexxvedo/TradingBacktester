@@ -21,6 +21,8 @@ export default function SessionPage() {
   const [currentPrice, setCurrentPrice] = useState(0);
   const [updateCount, setUpdateCount] = useState(0);
   const [initialData, setInitialData] = useState([]);
+  const [offset, setOffset] = useState(0);
+  const [dataUpdated, setDataUpdated] = useState(false);
 
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
@@ -40,13 +42,28 @@ export default function SessionPage() {
     }
   };
 
-  const fetchCSVDataByDateRange = async (start, end) => {
+  const fetchCSVDataByDateRange = async ({
+    start,
+    end,
+    limit,
+    fetchingOffset = 0,
+  }) => {
+    console.log("Fetching offset: ", fetchingOffset);
+    if (limit) limit = limit + (limit % 5000);
     try {
       const response = await fetch(
-        `/api/data?start=${start.toISOString()}&end=${end.toISOString()}`
+        `/api/data?start=${start.toISOString()}&end=${end.toISOString()}&limit=${
+          limit ? limit : 5000
+        }&offset=${fetchingOffset}`
       );
       const data = await response.json();
-      setInitialData(data);
+      console.log(data);
+      if (offset === 0) {
+        setInitialData(data);
+      } else {
+        setInitialData((prevData) => [...prevData, ...data]);
+      }
+      setDataUpdated(false);
     } catch (error) {
       console.error("Failed to load data by date range:", error);
     }
@@ -57,7 +74,7 @@ export default function SessionPage() {
     setStartDate(start);
     setEndDate(end);
     if (start && end) {
-      fetchCSVDataByDateRange(start, end);
+      fetchCSVDataByDateRange({ start, end });
       setIsPaused(true);
       resetAndLoadSeries();
     }
@@ -72,7 +89,7 @@ export default function SessionPage() {
       body: JSON.stringify({
         startDate: startDate,
         endDate: endDate,
-        currentCandleIndex: candleIndex,
+        currentCandleIndex: updateCount,
       }),
     });
 
@@ -102,10 +119,14 @@ export default function SessionPage() {
         if (data.startDate && data.endDate && data.currentCandleIndex != 0) {
           setStartDate(new Date(data.startDate));
           setEndDate(new Date(data.endDate));
-          fetchCSVDataByDateRange(
-            new Date(data.startDate),
-            new Date(data.endDate)
-          );
+          console.log("Current candle index: ", data.currentCandleIndex);
+          fetchCSVDataByDateRange({
+            start: new Date(data.startDate),
+            end: new Date(data.endDate),
+            limit: data.currentCandleIndex,
+          });
+          setOffset(data.currentCandleIndex + (data.currentCandleIndex % 5000));
+
           setRecoverCandleIndex(data.currentCandleIndex);
         } else {
           setRecoverSession(false);
@@ -198,7 +219,7 @@ export default function SessionPage() {
     var candle = {};
     var localUpdateCount = 0;
 
-    while (candles.length <= index) {
+    while (localUpdateCount <= index) {
       const baseIndex = localUpdateCount;
       const dataPoint = initialData[baseIndex];
 
@@ -218,7 +239,6 @@ export default function SessionPage() {
             close: initialData[baseIndex - 1].close,
           };
           candles.push(structuredClone(candle));
-          console.log(candles);
           candle = {
             time: new Date(dataPoint.timestamp).getTime() / 1000,
             open: openPrice,
@@ -266,9 +286,7 @@ export default function SessionPage() {
 
     if (isPaused) return;
 
-    const totalCandles = Math.floor(initialData.length / updatesPerCandle);
-    if (candleIndex >= totalCandles) {
-      clearInterval(intervalID);
+    if (candleIndex >= initialData.length) {
       return;
     }
 
@@ -310,6 +328,19 @@ export default function SessionPage() {
       setCurrentPrice(updatedCandle.close);
       setUpdateCount(updateCount + 1);
     }
+    if (updateCount + 2000 >= initialData.length) {
+      console.log("Fetching more data");
+      if (!dataUpdated) {
+        setDataUpdated(true);
+        console.log(initialData.length, updateCount, offset);
+        fetchCSVDataByDateRange({
+          start: startDate,
+          end: endDate,
+          fetchingOffset: offset + 5000,
+        });
+        setOffset(offset + 5000);
+      }
+    }
   };
 
   useEffect(() => {
@@ -331,7 +362,6 @@ export default function SessionPage() {
           }
         }
         setRecoverSession(false);
-        chartRef.current.applyOptions({ autoSize: true });
       }
     }
   }, [
@@ -357,7 +387,7 @@ export default function SessionPage() {
           <input
             type="range"
             min="1"
-            max="120"
+            max="1000"
             value={candlePerSecond}
             onChange={(e) => setCandlePerSecond(e.target.value)}
           />

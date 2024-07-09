@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 
 const prisma = new PrismaClient();
 
@@ -18,6 +18,8 @@ export async function GET(req) {
   const url = new URL(req.url);
   const start = url.searchParams.get("start");
   let end = url.searchParams.get("end");
+  const offset = parseInt(url.searchParams.get("offset")) || 0;
+  const limit = parseInt(url.searchParams.get("limit")) || 2000;
 
   if (!start || !end) {
     return new Response(JSON.stringify({ error: "Missing date parameters" }), {
@@ -44,7 +46,11 @@ export async function GET(req) {
       orderBy: {
         timestamp: "asc",
       },
+      skip: offset,
+      take: limit,
     });
+
+    console.log("Longitud: ", data.length);
 
     return new Response(JSON.stringify(data), {
       status: 200,
