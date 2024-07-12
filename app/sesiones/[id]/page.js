@@ -25,6 +25,7 @@ import {
 
 import PositionPanel from "@/components/Sesiones/PositionPanel";
 import { Spinner } from "@nextui-org/spinner";
+import { useTheme } from "next-themes";
 
 export default function SessionPage() {
   const { id } = useParams(); // Usar useParams para obtener el id
@@ -58,6 +59,8 @@ export default function SessionPage() {
   const [isLoading, setIsLoading] = useState(false); // Estado para controlar la carga de datos
   const [markers, setMarkers] = useState([]);
   const [lineSeries, setLineSeries] = useState(null);
+
+  const { theme, setTheme } = useTheme();
 
   const fetchAvailableDates = async () => {
     try {
@@ -204,19 +207,42 @@ export default function SessionPage() {
     }
   };
 
+  const updateChartColors = () => {
+    if (chartRef.current) {
+      chartRef.current.applyOptions({
+        layout: {
+          background: { color: theme === "dark" ? "#27272A" : "#efefef" },
+          textColor: theme === "dark" ? "#efefef" : "#27272A",
+        },
+        grid: {
+          vertLines: { color: theme === "dark" ? "#414141" : "#a1a1a1" },
+          horzLines: { color: theme === "dark" ? "#414141" : "#a1a1a1" },
+        },
+      });
+
+      seriesRef.current.applyOptions({
+        upColor: "#26a69a",
+        downColor: "#ef5350",
+        borderVisible: false,
+        wickUpColor: "#26a69a",
+        wickDownColor: "#ef5350",
+      });
+    }
+  };
+
   useEffect(() => {
     if (!chartRef.current && chartContainerRef.current) {
       const chart = createChart(chartContainerRef.current, {
         autoSize: true,
         layout: {
           background: {
-            color: "#27272A",
+            color: theme === "dark" ? "#27272A" : "#cfcfcf",
           },
-          textColor: "#ffffff",
+          textColor: theme === "light" ? "#27272A" : "#ffffff",
         },
         grid: {
-          vertLines: { color: "#414141" },
-          horzLines: { color: "#414141" },
+          vertLines: { color: theme === "light" ? "#818181" : "#414141" },
+          horzLines: { color: theme === "light" ? "#818181" : "#414141" },
         },
         localization: {
           timeFormatter: (timestamp) => {
@@ -256,8 +282,10 @@ export default function SessionPage() {
         }),
       );
       chartRef.current = chart;
+    } else {
+      updateChartColors();
     }
-  }, []);
+  }, [theme]);
 
   const getFinalCandles = (index) => {
     if (!initialData || initialData.length === 0) {
@@ -329,7 +357,6 @@ export default function SessionPage() {
 
     if (localUpdateCount == initialData.length) {
       setOpenFinishModal(true);
-      console.log("Hola2");
       setUpdateCount(updateCount + 1);
       setIsFullyFinished(true);
       setIsPaused(true);
@@ -453,9 +480,9 @@ export default function SessionPage() {
   const togglePause = () => setIsPaused(!isPaused);
 
   return (
-    <div className="flex flex-col min-h-[100%] min-w-full p-4 gap-4 border-2 border-zinc-600 rounded-lg">
+    <div className="flex flex-col min-h-[100%] min-w-full p-4 gap-4 border-2 rounded-lg">
       <div
-        className={`flex flex-row ${panelOpen ? "min-h-[70%] max-h-[70%]" : "min-h-[92%] max-h-[92%]"}  min-w-full p-4 border-2 border-zinc-600 rounded-lg items-center justify-between`}
+        className={`flex flex-row ${panelOpen ? "min-h-[70%] max-h-[70%]" : "min-h-[92%] max-h-[92%]"}  min-w-full p-4 border-2  rounded-lg items-center justify-between`}
       >
         <div className="flex flex-col h-full max-w-[80%] min-w-[80%] ">
           <div
@@ -464,16 +491,18 @@ export default function SessionPage() {
           />
           <div className="flex items-center justify-center gap-4 mt-4 max-h-[5%]">
             <Button variant="ghost" size="icon">
-              <Image src={RewindIcon} alt="Rewind" className="h-5 w-5" />
-              <span className="sr-only">Rewind</span>
+              <Image
+                src={RewindIcon}
+                alt="Rewind"
+                className={`h-5 w-5 ${theme === "light" ? "invert" : "invert-0"}`}
+              />
             </Button>
             <Button variant="ghost" size="icon" onClick={togglePause}>
               <Image
                 src={!isPaused ? PauseIcon : PlayIcon}
                 alt="Pause"
-                className="h-5 w-5"
+                className={`h-5 w-5 ${theme === "light" ? "invert" : "invert-0"}`}
               />
-              <span className="sr-only">Pause</span>
             </Button>
             <Slider
               color={"foreground"}
@@ -487,7 +516,7 @@ export default function SessionPage() {
               <Image
                 src={FastForwardIcon}
                 alt="Fast Forward"
-                className="h-5 w-5"
+                className={`h-5 w-5 ${theme === "light" ? "invert" : "invert-0"}`}
               />
             </Button>
             <Button color="success" size="icon" onClick={saveSessionData}>
@@ -495,7 +524,7 @@ export default function SessionPage() {
             </Button>
           </div>
         </div>
-        <div className="flex gap-4 max-w-[20%] min-h-full p-6 border-2 rounded-lg border-zinc-700 bg-zinc-900 ">
+        <div className="flex gap-4 max-w-[20%] min-h-full p-6 border-2 rounded-lg ">
           <PositionCreator
             currentPrice={currentPrice}
             currentBalance={currentBalance}
@@ -510,7 +539,7 @@ export default function SessionPage() {
         </div>
       </div>
       <div
-        className={`${panelOpen ? "max-h-[28%] min-h-[28%]" : "max-h-[5%] h-[5%]"} w-full min-w-full`}
+        className={`${panelOpen ? "max-h-[28%] min-h-[28%]" : "max-h-[5%] h-[5%]"} w-full min-w-full border-2 rounded-lg`}
       >
         <PositionPanel
           panelOpen={panelOpen}

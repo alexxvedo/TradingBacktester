@@ -12,6 +12,8 @@ import { Button } from "@nextui-org/button";
 export default function PositionsTable({
   orders,
   setOrders,
+  history,
+  setHistory,
   currentPrice,
   saveSessionData,
   accountSize,
@@ -29,6 +31,7 @@ export default function PositionsTable({
         order.size *
         (order.type === "buy" ? 1 : -1),
     };
+    setHistory([...history, newOrder]);
 
     try {
       const res = await fetch(`/api/operations/${key}`, {
@@ -45,6 +48,7 @@ export default function PositionsTable({
 
       if (res.ok) {
         setOrders([...orders.filter((order) => order.id !== key)]);
+        setHistory([...history, newOrder]);
         saveSessionData();
       } else {
         setOrders([...orders, order]);
@@ -52,6 +56,8 @@ export default function PositionsTable({
       }
     } catch (error) {
       setOrders([...orders, order]);
+      setHistory([...history.filter((order) => order.id !== key)]);
+
       console.error("Error closing operation:", error);
     }
   };

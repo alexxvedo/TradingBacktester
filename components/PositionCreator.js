@@ -17,9 +17,7 @@ export default function PositionCreator({
   const [history, setHistory] = useState([]);
   const [fetchingPositions, setFetchingPositions] = useState(true);
   const [previousPrice, setPreviousPrice] = useState(currentPrice.toFixed(5));
-  const [priceColors, setPriceColors] = useState(
-    Array(10).fill("text-neutral-200"),
-  );
+  const [priceColors, setPriceColors] = useState(Array(10).fill(""));
 
   useEffect(() => {
     const currentPriceStr = currentPrice.toFixed(5);
@@ -31,19 +29,19 @@ export default function PositionCreator({
           ? "text-blue-500"
           : "text-red-500";
       }
-      return "text-neutral-200";
+      return "";
     });
 
     // Apply the same color to all subsequent digits if a change is detected
-    let colorToApply = "text-neutral-200";
+    let colorToApply = "";
     for (let i = 0; i < newPriceColors.length; i++) {
-      if (newPriceColors[i] !== "text-neutral-200") {
+      if (newPriceColors[i] !== "") {
         colorToApply = newPriceColors[i];
         break;
       }
     }
     const finalPriceColors = newPriceColors.map((color) => {
-      if (color !== colorToApply && color !== "text-neutral-200") {
+      if (color !== colorToApply && color !== "") {
         return colorToApply;
       }
       return color;

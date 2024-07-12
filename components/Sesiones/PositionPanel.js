@@ -2,6 +2,7 @@
 import { useAuth } from "@clerk/nextjs";
 import { SignedIn, UserButton } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
+import { useTheme } from "next-themes";
 
 import Image from "next/image";
 import ArrowLeft from "@/public/arrow_left.svg";
@@ -23,9 +24,13 @@ export default function PositionPanel({
   const [history, setHistory] = useState([]);
   const [fetchingPositions, setFetchingPositions] = useState(true);
   const [unrealizedPnl, setUnrealizedPnl] = useState(0);
+  const [mounted, setMounted] = useState(false);
+  const { theme, setTheme } = useTheme();
 
   const { userId } = useAuth();
-
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   useEffect(() => {
     const fetchPositionHistory = async () => {
       try {
@@ -87,12 +92,13 @@ export default function PositionPanel({
       });
     }
   }, [currentPrice, orders, fetchingPositions]);
+  if (!mounted) return null;
 
   if (!userId) return null;
 
   return (
     userId && (
-      <div className="flex flex-row px-4 max-h-full min-h-full h-full w-full bg-zinc-900 rounded-lg align-middle items-center justify-center">
+      <div className="flex flex-row px-4 max-h-full min-h-full h-full w-full rounded-lg align-middle items-center justify-center">
         <div className="w-full h-[95%] flex flex-col max-h-[95%]">
           <Tabs
             aria-label="Options"
@@ -114,6 +120,8 @@ export default function PositionPanel({
                     <PositionsTable
                       orders={orders}
                       setOrders={setOrders}
+                      history={history}
+                      setHistory={setHistory}
                       currentPrice={currentPrice}
                       saveSessionData={saveSessionData}
                       isHistory={false}
@@ -157,7 +165,7 @@ export default function PositionPanel({
           </Tabs>
         </div>
         <div
-          className={`w-auto h-[95%] flex ${panelOpen ? "items-start" : "items-center"}`}
+          className={`w-auto h-[95%] flex ${panelOpen ? "items-start" : "items-center"} ${theme === "light" ? "invert" : "invert-0"}`}
         >
           <Image
             src={ArrowLeft}
