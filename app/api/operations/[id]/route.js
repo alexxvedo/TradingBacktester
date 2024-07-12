@@ -19,7 +19,7 @@ export async function PUT(req, { params }) {
   }
 
   try {
-    const { exitPrice, profit } = await req.json();
+    const { exitPrice, profit, accountSize } = await req.json();
 
     const operation = await prisma.operation.update({
       where: { id: parseInt(id) },
@@ -36,12 +36,12 @@ export async function PUT(req, { params }) {
       orderBy: { createdAt: "asc" }, // Ordenar por fecha de creación para el cálculo del drawdown
     });
 
-    // Calcular las métricas
     const totalOperations = operations.length;
     const profitLoss = operations.reduce(
       (acc, op) => acc + (op.profit || 0),
-      0
+      0,
     );
+    const currentBalance = accountSize + profitLoss;
     const averageGain = totalOperations > 0 ? profitLoss / totalOperations : 0;
     const winRate =
       totalOperations > 0
@@ -74,6 +74,7 @@ export async function PUT(req, { params }) {
         averageGain,
         maxDrawdown,
         winRate,
+        currentBalance,
       },
     });
 
@@ -91,7 +92,7 @@ export async function PUT(req, { params }) {
         headers: {
           "Content-Type": "application/json",
         },
-      }
+      },
     );
   }
 }

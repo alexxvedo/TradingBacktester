@@ -18,7 +18,9 @@ export async function POST(req) {
   console.log("Estoy aqui");
 
   try {
-    const { title, description, accountSize } = await req.json();
+    const { title, description, accountSize, startDate, endDate } =
+      await req.json();
+    console.log(accountSize);
 
     const sesion = await prisma.session.create({
       data: {
@@ -32,6 +34,8 @@ export async function POST(req) {
         averageGain: 0.0,
         maxDrawdown: 0.0,
         winRate: 0.0,
+        startDate,
+        endDate,
         accountSize: parseFloat(accountSize),
         currentBalance: parseFloat(accountSize),
       },
@@ -44,6 +48,8 @@ export async function POST(req) {
       },
     });
   } catch (error) {
+    console.log("Invalid token or server error: ", error);
+
     return new Response(
       JSON.stringify({ error: "Invalid token or server error" }),
       {
@@ -51,7 +57,7 @@ export async function POST(req) {
         headers: {
           "Content-Type": "application/json",
         },
-      }
+      },
     );
   }
 }
@@ -87,7 +93,7 @@ export async function GET() {
         headers: {
           "Content-Type": "application/json",
         },
-      }
+      },
     );
   }
 }

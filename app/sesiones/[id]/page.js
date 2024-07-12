@@ -7,13 +7,31 @@ import { useParams } from "next/navigation"; // Importar useParams
 import { createChart } from "lightweight-charts";
 import PositionCreator from "@/components/PositionCreator";
 import { Button } from "@nextui-org/button";
+import PauseIcon from "@/public/pause.svg";
+import RewindIcon from "@/public/rewind.svg";
+import FastForwardIcon from "@/public/forward.svg";
+import Save from "@/public/save.svg";
+import PlayIcon from "@/public/play.svg";
+import Image from "next/image";
+import { Slider } from "@nextui-org/slider";
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  useDisclosure,
+} from "@nextui-org/modal";
+
+import PositionPanel from "@/components/Sesiones/PositionPanel";
+import { Spinner } from "@nextui-org/spinner";
 
 export default function SessionPage() {
   const { id } = useParams(); // Usar useParams para obtener el id
   const chartContainerRef = useRef(null);
   const chartRef = useRef(null);
   const seriesRef = useRef(null);
-  const [isPaused, setIsPaused] = useState(true);
+  const [isPaused, setIsPaused] = useState(false);
   const [currentCandle, setCurrentCandle] = useState({});
   const [candleIndex, setCandleIndex] = useState(0);
   const [subIndex, setSubIndex] = useState(0);
@@ -32,6 +50,13 @@ export default function SessionPage() {
   const [accountSize, setAccountSize] = useState("");
   const [currentBalance, setCurrentBalance] = useState("");
 
+  const [panelOpen, setPanelOpen] = useState(true);
+  const [orders, setOrders] = useState([]);
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const [isLoading, setIsLoading] = useState(false); // Estado para controlar la carga de datos
+  const [markers, setMarkers] = useState([]);
+  const [lineSeries, setLineSeries] = useState(null);
+
   const fetchAvailableDates = async () => {
     try {
       const response = await fetch("/api/dates");
@@ -48,16 +73,15 @@ export default function SessionPage() {
     limit,
     fetchingOffset = 0,
   }) => {
-    console.log("Fetching offset: ", fetchingOffset);
-    if (limit) limit = limit + (limit % 5000);
+    if (limit) limit = limit + 5000;
     try {
       const response = await fetch(
         `/api/data?start=${start.toISOString()}&end=${end.toISOString()}&limit=${
           limit ? limit : 5000
-        }&offset=${fetchingOffset}`
+        }&offset=${fetchingOffset}`,
       );
       const data = await response.json();
-      console.log(data);
+
       if (offset === 0) {
         setInitialData(data);
       } else {
@@ -66,17 +90,6 @@ export default function SessionPage() {
       setDataUpdated(false);
     } catch (error) {
       console.error("Failed to load data by date range:", error);
-    }
-  };
-
-  const handleDateChange = (dates) => {
-    const [start, end] = dates;
-    setStartDate(start);
-    setEndDate(end);
-    if (start && end) {
-      fetchCSVDataByDateRange({ start, end });
-      setIsPaused(true);
-      resetAndLoadSeries();
     }
   };
 
@@ -99,6 +112,32 @@ export default function SessionPage() {
   };
 
   useEffect(() => {
+    if (lineSeries != null) {
+      const sortedMarkers = markers.sort((a, b) => a.time - b.time);
+      console.log(sortedMarkers);
+      lineSeries.setData([]);
+      lineSeries.setData(
+        sortedMarkers.map((marker) => ({
+          time: marker.time,
+          value: marker.value,
+        })),
+      );
+      lineSeries.setMarkers(
+        sortedMarkers.map((marker) => ({
+          time: marker.time,
+          position: marker.type === "buy" ? "belowBar" : "aboveBar",
+          shape: marker.type === "buy" ? "arrowUp" : "arrowDown",
+          color: marker.type === "buy" ? "#f68410" : "#f68410",
+          text:
+            marker.type === "buy"
+              ? "Buy " + marker.size + " @ " + marker.value
+              : "Sell " + marker.size + " @ " + marker.value,
+        })),
+      );
+    }
+  }, [markers, lineSeries]);
+
+  useEffect(() => {
     fetchAvailableDates();
   }, []);
 
@@ -106,6 +145,8 @@ export default function SessionPage() {
     setRecoverSession(true);
 
     const fetchSessionData = async () => {
+      setIsLoading(true); // Ocultar el modal de carga
+
       const res = await fetch(`/api/sessions/${id}`, {
         headers: {
           "Content-Type": "application/json",
@@ -116,16 +157,15 @@ export default function SessionPage() {
         const data = await res.json();
         setAccountSize(data.accountSize);
         setCurrentBalance(data.currentBalance);
-        if (data.startDate && data.endDate && data.currentCandleIndex != 0) {
+        if (data.startDate && data.endDate) {
           setStartDate(new Date(data.startDate));
           setEndDate(new Date(data.endDate));
-          console.log("Current candle index: ", data.currentCandleIndex);
           fetchCSVDataByDateRange({
             start: new Date(data.startDate),
             end: new Date(data.endDate),
             limit: data.currentCandleIndex,
           });
-          setOffset(data.currentCandleIndex + (data.currentCandleIndex % 5000));
+          setOffset(data.currentCandleIndex + 5000);
 
           setRecoverCandleIndex(data.currentCandleIndex);
         } else {
@@ -134,8 +174,8 @@ export default function SessionPage() {
       } else {
         console.error("Failed to fetch session data");
       }
+      setIsLoading(false); // Ocultar el modal de carga
     };
-
     if (id) {
       fetchSessionData();
     }
@@ -205,6 +245,13 @@ export default function SessionPage() {
         wickUpColor: "#26a69a",
         wickDownColor: "#ef5350",
       });
+      setLineSeries(
+        chart.addLineSeries({
+          color: "rgba(255, 255, 255, 0)", // hide or show the line by setting opacity
+          lastValueVisible: false, // hide value from y axis
+          priceLineVisible: false,
+        }),
+      );
       chartRef.current = chart;
     }
   }, []);
@@ -328,7 +375,7 @@ export default function SessionPage() {
       setCurrentPrice(updatedCandle.close);
       setUpdateCount(updateCount + 1);
     }
-    if (updateCount + 2000 >= initialData.length) {
+    if (updateCount + 2000 == initialData.length) {
       console.log("Fetching more data");
       if (!dataUpdated) {
         setDataUpdated(true);
@@ -336,7 +383,7 @@ export default function SessionPage() {
         fetchCSVDataByDateRange({
           start: startDate,
           end: endDate,
-          fetchingOffset: offset + 5000,
+          fetchingOffset: offset,
         });
         setOffset(offset + 5000);
       }
@@ -378,57 +425,94 @@ export default function SessionPage() {
   const togglePause = () => setIsPaused(!isPaused);
 
   return (
-    <div className="flex flex-col min-h-[100%] min-w-full p-4">
-      <div className="flex items-center gap-4 mb-4 w-full h-[20%] min-h-[20%] ">
-        <div className="flex items-center flex-row gap-4">
-          <Button onClick={togglePause} className="w-auto" color="secondary">
-            {isPaused ? "Reanudar" : "Pausar"}
-          </Button>
-          <input
-            type="range"
-            min="1"
-            max="1000"
-            value={candlePerSecond}
-            onChange={(e) => setCandlePerSecond(e.target.value)}
+    <div className="flex flex-col min-h-[100%] min-w-full p-4 gap-4 border-2 border-zinc-600 rounded-lg">
+      <div
+        className={`flex flex-row ${panelOpen ? "min-h-[70%] max-h-[70%]" : "min-h-[92%] max-h-[92%]"}  min-w-full p-4 border-2 border-zinc-600 rounded-lg items-center justify-between`}
+      >
+        <div className="flex flex-col h-full max-w-[80%] min-w-[80%] ">
+          <div
+            className="min-w-[80%] min-h-[90%] max-h-full rounded-lg"
+            ref={chartContainerRef}
           />
-          <Button onClick={saveSessionData} className="w-auto" color="success">
-            Save Session
-          </Button>
-          <DatePicker
-            selected={startDate}
-            onChange={handleDateChange}
-            selectsRange
-            startDate={startDate}
-            endDate={endDate}
-            inline
-            monthsShown={1}
-            includeDates={availableDates}
-            dateFormat="dd/MM/yyyy"
-            placeholderText="Select Date Range"
+          <div className="flex items-center justify-center gap-4 mt-4 max-h-[5%]">
+            <Button variant="ghost" size="icon">
+              <Image src={RewindIcon} alt="Rewind" className="h-5 w-5" />
+              <span className="sr-only">Rewind</span>
+            </Button>
+            <Button variant="ghost" size="icon" onClick={togglePause}>
+              <Image
+                src={!isPaused ? PauseIcon : PlayIcon}
+                alt="Pause"
+                className="h-5 w-5"
+              />
+              <span className="sr-only">Pause</span>
+            </Button>
+            <Slider
+              color={"foreground"}
+              aria-label="Speed"
+              minValue={1}
+              maxValue={100}
+              value={candlePerSecond}
+              onChange={setCandlePerSecond}
+            />
+            <Button variant="ghost" size="icon">
+              <Image
+                src={FastForwardIcon}
+                alt="Fast Forward"
+                className="h-5 w-5"
+              />
+            </Button>
+            <Button color="success" size="icon" onClick={saveSessionData}>
+              <Image src={Save} alt="Fast Forward" className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+        <div className="flex gap-4 max-w-[20%] min-h-full p-6 border-2 rounded-lg border-zinc-700 bg-zinc-900 ">
+          <PositionCreator
+            currentPrice={currentPrice}
+            currentBalance={currentBalance}
+            saveSessionData={saveSessionData}
+            sessionId={id}
+            orders={orders}
+            setOrders={setOrders}
+            markers={markers}
+            setMarkers={setMarkers}
+            currentCandleDate={currentCandle.time}
           />
         </div>
       </div>
-      <div className="flex gap-4 min-w-full min-h-[80%] max-h-[80%]">
-        <div className="flex flex-col min-w-[70%] max-w-[70%] min-h-full max-h-full gap-4 overflow-y-hidden">
-          {recoverSession ? (
-            <div className="min-w-full flex flex-col items-center justify-center">
-              <p>Loading Graph...</p>
-              <div className="border-4 border-t-transparent border-grey-500 w-4 h-4 rounded-full animate-spin"></div>
-            </div>
-          ) : (
-            <div
-              className="min-w-[80%] min-h-full max-h-full"
-              ref={chartContainerRef}
-            />
-          )}
-        </div>
-        <PositionCreator
-          currentPrice={currentPrice}
-          currentBalance={currentBalance}
-          saveSessionData={saveSessionData}
+      <div
+        className={`${panelOpen ? "max-h-[28%] min-h-[28%]" : "max-h-[5%] h-[5%]"} w-full min-w-full`}
+      >
+        <PositionPanel
+          panelOpen={panelOpen}
+          setPanelOpen={setPanelOpen}
           sessionId={id}
+          currentPrice={currentPrice}
+          orders={orders}
+          setOrders={setOrders}
+          saveSessionData={saveSessionData}
+          accountSize={accountSize}
         />
       </div>
+      <Modal
+        isOpen={isLoading}
+        onOpenChange={setIsLoading}
+        backdrop="opaque"
+        classNames={{
+          backdrop:
+            "bg-gradient-to-t from-zinc-900 to-zinc-900/10 backdrop-opacity-20",
+        }}
+      >
+        <ModalContent className="flex items-center">
+          <ModalHeader className="flex flex-col gap-1 ">
+            Loading Data
+          </ModalHeader>
+          <ModalBody>
+            <Spinner color="secondary" />
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     </div>
   );
 }

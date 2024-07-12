@@ -9,7 +9,7 @@ export const metadata = {
 
 export default function SessionIdLayout({ children }) {
   return (
-    <div className="flex min-h-full min-w-full justify-center max-h-[100%] ">
+    <div className="flex min-h-full min-w-full justify-center max-h-[100%] overflow-hidden">
       {children}
     </div>
   );

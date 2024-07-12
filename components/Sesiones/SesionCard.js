@@ -1,27 +1,57 @@
-import React from "react";
-import { Bar } from "react-chartjs-2";
+import React, { useEffect, useState } from "react";
+import { Link } from "@nextui-org/react";
+import { Line } from "react-chartjs-2";
 import "chart.js/auto";
-import Link from "next/link";
+import { Card, CardHeader, CardBody } from "@nextui-org/card";
 
 const SesionCard = ({ sesion }) => {
+  const [operations, setOperations] = useState([]);
+  const [balances, setBalances] = useState([]);
+
+  useEffect(() => {
+    const fetchOperations = async () => {
+      try {
+        const res = await fetch(`/api/operations?sessionId=${sesion.id}`);
+        const data = await res.json();
+        setOperations(data);
+
+        // Group operations by date and keep the last operation of each day
+        const groupedOperations = data.reduce((acc, op) => {
+          const date = new Date(op.createdAt).toLocaleDateString();
+          if (
+            !acc[date] ||
+            new Date(acc[date].createdAt).toLocaleString() <
+              new Date(op.createdAt).toLocaleString()
+          ) {
+            acc[date] = op;
+          }
+          return acc;
+        }, {});
+
+        // Calculate the balance over time
+        let currentBalance = sesion.accountSize;
+        const calculatedBalances = Object.values(groupedOperations).map(
+          (op) => {
+            currentBalance += op.profit;
+            return { date: op.createdAt, balance: currentBalance };
+          },
+        );
+
+        setBalances(calculatedBalances);
+      } catch (error) {
+        console.error("Failed to fetch operations:", error);
+      }
+    };
+
+    fetchOperations();
+  }, [sesion.id, sesion.accountSize]);
+
   const data = {
-    labels: [
-      "Total Operations",
-      "Profit/Loss",
-      "Average Gain",
-      "Max Drawdown",
-      "Win Rate",
-    ],
+    labels: balances.map((b) => new Date(b.date).toLocaleDateString()),
     datasets: [
       {
-        label: "Performance Metrics",
-        data: [
-          sesion.totalOperations,
-          sesion.profitLoss,
-          sesion.averageGain,
-          -sesion.maxDrawdown,
-          sesion.winRate,
-        ],
+        label: "Balance Over Time",
+        data: balances.map((b) => b.balance),
         fill: false,
         backgroundColor: "rgb(132, 99, 255)",
         borderColor: "rgba(132, 99, 255, 0.2)",
@@ -32,67 +62,60 @@ const SesionCard = ({ sesion }) => {
   const options = {
     scales: {
       y: {
-        beginAtZero: true,
+        beginAtZero: false,
       },
     },
-    maintainAspectRatio: false,
+    maintainAspectRatio: true,
   };
 
   return (
-    <div className="w-full h-full bg-zinc-800 rounded-xl p-4 flex flex-col gap-4">
-      <Link href={`/sesiones/${sesion.id}`}>
-        <h3 className="text-white text-xl font-bold">{sesion.title}</h3>
-      </Link>
-      <div className="flex flex-row justify-between items-center">
-        <div>
-          <p className="text-white text-sm font-bold">Date:</p>
-          <p className="text-white text-sm">{sesion.date}</p>
+    <Card className="max-w-[400px]">
+      <CardHeader className="flex items-center justify-between flex-col w-full gap-2">
+        <Link href={`/sesiones/${sesion.id}`} className="text-white">
+          <h4 className="font-bold text-2xl">{sesion.title}</h4>
+        </Link>
+        <small className="text-default-500">
+          {new Date(sesion.createdAt).toLocaleString()}
+        </small>
+      </CardHeader>
+      <CardBody>
+        <div className="grid gap-2">
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">Start Date:</span>
+            <span>{new Date(sesion.startDate).toLocaleDateString()}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">End Date:</span>
+            <span>{new Date(sesion.endDate).toLocaleDateString()}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">Total Operations:</span>
+            <span>{sesion.totalOperations}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">Account Size:</span>
+            <span>{sesion.accountSize.toFixed(2)}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">Current Balance:</span>
+            <span>{sesion.currentBalance.toFixed(2)}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">Profit:</span>
+            <span
+              className={
+                sesion.profitLoss >= 0 ? "text-green-500" : "text-red-500"
+              }
+            >
+              {sesion.profitLoss.toFixed(2)}$
+            </span>
+          </div>
         </div>
-        <div>
-          <p className="text-white text-sm font-bold">Time:</p>
-          <p className="text-white text-sm">{sesion.time}</p>
+        <div className="mt-4">
+          <Line data={data} options={options} height={200} />
         </div>
-      </div>
-      <div className="flex flex-row justify-between items-center">
-        <div>
-          <p className="text-white text-sm font-bold">Total Operations:</p>
-          <p className="text-white text-sm">{sesion.totalOperations}</p>
-        </div>
-        <div>
-          <p className="text-white text-sm font-bold">Profit/Loss:</p>
-          <p
-            className={`text-sm ${
-              sesion.profitLoss >= 0 ? "text-green-500" : "text-red-500"
-            }`}
-          >
-            {sesion.profitLoss.toFixed(2)}
-          </p>
-        </div>
-        <div>
-          <p className="text-white text-sm font-bold">Average Gain:</p>
-          <p
-            className={`text-sm ${
-              sesion.averageGain >= 0 ? "text-green-500" : "text-red-500"
-            }`}
-          >
-            {sesion.averageGain.toFixed(2)}
-          </p>
-        </div>
-        <div>
-          <p className="text-white text-sm font-bold">Max Drawdown:</p>
-          <p className="text-sm text-yellow-500">
-            {sesion.maxDrawdown.toFixed(1)}%
-          </p>
-        </div>
-        <div>
-          <p className="text-white text-sm font-bold">Win Rate:</p>
-          <p className="text-sm text-green-500">{sesion.winRate.toFixed(1)}%</p>
-        </div>
-      </div>
-      <div className="w-full" style={{ height: "300px" }}>
-        <Bar data={data} options={options} />
-      </div>
-    </div>
+      </CardBody>
+    </Card>
   );
 };
 
