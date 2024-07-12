@@ -8,7 +8,7 @@ import "./globals.css";
 export default function RootLayout({ children }) {
   return (
     <ClerkProvider>
-      <html lang="en">
+      <html lang="en" suppressHydrationWarning>
         <body>
           <NextUIProvider>
             <NextThemesProvider attribute="class" defaultTheme="dark">
@@ -17,8 +17,6 @@ export default function RootLayout({ children }) {
           </NextUIProvider>
         </body>
       </html>
-      <SpeedInsights />
-      <Analytics />
     </ClerkProvider>
   );
 }

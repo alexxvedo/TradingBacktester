@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-
 import { useAuth } from "@clerk/nextjs";
 import SesionCard from "@/components/Sesiones/SesionCard";
 import {
@@ -13,32 +12,23 @@ import {
   useDisclosure,
   Button,
 } from "@nextui-org/react";
-
-import { Select, SelectSection, SelectItem } from "@nextui-org/select";
-
+import { Select, SelectItem } from "@nextui-org/select";
 import { Input, Textarea } from "@nextui-org/input";
-
 import { DateRangePicker } from "@nextui-org/date-picker";
-import {
-  getLocalTimeZone,
-  parseDate,
-  today,
-  isWeekend,
-} from "@internationalized/date";
+import { getLocalTimeZone, today } from "@internationalized/date";
 import { useDateFormatter } from "@react-aria/i18n";
 
 export default function Sesiones() {
   const { isLoaded, userId } = useAuth();
   const [sessions, setSessions] = useState([]);
-  const [isLoading, setIsLoading] = useState(true); // Agregar estado de carga
+  const [isLoading, setIsLoading] = useState(true);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [accountSize, setAccountSize] = useState("100000");
-  const router = useRouter(); // Usar useRouter en un componente de cliente
+  const router = useRouter();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [dates, setDates] = useState({});
   const [availableDates, setAvailableDates] = useState([]);
-
   let formatter = useDateFormatter();
 
   useEffect(() => {
@@ -58,33 +48,28 @@ export default function Sesiones() {
       const data = await res.json();
       if (res.status === 401) {
         console.log(data.error);
-        signOut(); // Cerrar sesión si no está autorizado
+        signOut();
       }
-      //console.log(data);
       setSessions(data);
-      setIsLoading(false); // Cambiar estado de carga
+      setIsLoading(false);
     } catch (error) {
       console.error("Error fetching sessions:", error);
     }
   };
 
   const handleSubmit = async (event) => {
-    console.log("hola");
-
     try {
       const startDate = new Date(
         dates.start.year,
-        dates.start.month - 1, // Los meses en JavaScript van de 0 (enero) a 11 (diciembre)
+        dates.start.month - 1,
         dates.start.day,
       ).toISOString();
-      console.log(startDate);
 
       const endDate = new Date(
         dates.end.year,
-        dates.end.month - 1, // Los meses en JavaScript van de 0 (enero) a 11 (diciembre)
+        dates.end.month - 1,
         dates.end.day,
       ).toISOString();
-      console.log(endDate);
 
       const res = await fetch("/api/sessions", {
         method: "POST",
@@ -104,10 +89,9 @@ export default function Sesiones() {
         const newSession = await res.json();
         setTitle("");
         setDescription("");
-        onOpenChange(false); // Cambiar el estado del modal
-        router.push(`/sesiones/${newSession.id}`); // Redirige a la nueva sesión
+        onOpenChange(false);
+        router.push(`/sesiones/${newSession.id}`);
       } else {
-        console.log(res);
         console.error("Failed to create session", res.error);
       }
     } catch (error) {
@@ -128,7 +112,6 @@ export default function Sesiones() {
   };
 
   const handleAccountSizeChange = (e) => {
-    console.log(e.target.value);
     setAccountSize(e.target.value);
   };
 
@@ -196,12 +179,6 @@ export default function Sesiones() {
                     return !availableDates.includes(formattedDate);
                   }}
                   maxValue={today(getLocalTimeZone()).subtract({ days: 1 })}
-                  errorMessage={(value) => {
-                    if (value.isInvalid) {
-                      return "Please enter a valid date";
-                    }
-                    console.log(value);
-                  }}
                 />
               </ModalBody>
               <ModalFooter>

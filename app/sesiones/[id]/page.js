@@ -52,7 +52,9 @@ export default function SessionPage() {
 
   const [panelOpen, setPanelOpen] = useState(true);
   const [orders, setOrders] = useState([]);
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const [isFinished, setIsFinished] = useState(false);
+  const [isFullyFinished, setIsFullyFinished] = useState(false);
+  const [openFinishModal, setOpenFinishModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false); // Estado para controlar la carga de datos
   const [markers, setMarkers] = useState([]);
   const [lineSeries, setLineSeries] = useState(null);
@@ -82,6 +84,7 @@ export default function SessionPage() {
       );
       const data = await response.json();
 
+      if (data.length < 5000) setIsFinished(true);
       if (offset === 0) {
         setInitialData(data);
       } else {
@@ -258,15 +261,16 @@ export default function SessionPage() {
 
   const getFinalCandles = (index) => {
     if (!initialData || initialData.length === 0) {
-      console.log("No hay data");
       return;
     }
-    console.log("Hay data");
+
     var candles = [];
     var candle = {};
     var localUpdateCount = 0;
 
-    while (localUpdateCount <= index) {
+    while (localUpdateCount < (index != 0 ? index - 1 : index)) {
+      console.log(localUpdateCount, index - 1);
+
       const baseIndex = localUpdateCount;
       const dataPoint = initialData[baseIndex];
 
@@ -323,17 +327,35 @@ export default function SessionPage() {
     setCurrentCandle(candle);
     setCandleIndex(index);
 
+    if (localUpdateCount == initialData.length) {
+      setOpenFinishModal(true);
+      console.log("Hola2");
+      setUpdateCount(updateCount + 1);
+      setIsFullyFinished(true);
+      setIsPaused(true);
+    }
+
     return candles;
   };
 
   const updateChart = () => {
-    if (!initialData || initialData.length === 0) return;
+    if (
+      !initialData ||
+      initialData.length === 0 ||
+      updateCount > initialData.length
+    )
+      return;
 
     const updatesPerCandle = 60; // Cada vela se actualiza con 60 datos de un segundo
 
     if (isPaused) return;
 
-    if (candleIndex >= initialData.length) {
+    if (updateCount == initialData.length && !isFullyFinished) {
+      setOpenFinishModal(true);
+      console.log("Hola2");
+      setUpdateCount(updateCount + 1);
+      setIsFullyFinished(true);
+      setIsPaused(true);
       return;
     }
 
@@ -375,7 +397,11 @@ export default function SessionPage() {
       setCurrentPrice(updatedCandle.close);
       setUpdateCount(updateCount + 1);
     }
-    if (updateCount + 2000 == initialData.length) {
+    if (
+      updateCount + 2000 == initialData.length &&
+      !isFinished &&
+      !openFinishModal
+    ) {
       console.log("Fetching more data");
       if (!dataUpdated) {
         setDataUpdated(true);
@@ -391,12 +417,12 @@ export default function SessionPage() {
   };
 
   useEffect(() => {
-    if (!recoverSession) {
+    if (!recoverSession && !isFullyFinished) {
       const intervalID = setInterval(() => {
         updateChart();
       }, 1000 / candlePerSecond); // Actualiza cada segundo
       return () => clearInterval(intervalID);
-    } else {
+    } else if (!isFullyFinished) {
       if (initialData.length != 0) {
         const candles = getFinalCandles(recoverCandleIndex);
 
@@ -409,6 +435,8 @@ export default function SessionPage() {
           }
         }
         setRecoverSession(false);
+      } else if (isFullyFinished && !isPaused) {
+        setOpenFinishModal(true);
       }
     }
   }, [
@@ -451,7 +479,7 @@ export default function SessionPage() {
               color={"foreground"}
               aria-label="Speed"
               minValue={1}
-              maxValue={100}
+              maxValue={300}
               value={candlePerSecond}
               onChange={setCandlePerSecond}
             />
@@ -510,6 +538,40 @@ export default function SessionPage() {
           </ModalHeader>
           <ModalBody>
             <Spinner color="secondary" />
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        isOpen={openFinishModal}
+        onOpenChange={() => {
+          setOpenFinishModal(false);
+          setIsFullyFinished(true);
+          console.log("Hola");
+        }}
+        backdrop="opaque"
+        classNames={{
+          backdrop:
+            "bg-gradient-to-t from-zinc-900 to-zinc-900/10 backdrop-opacity-20",
+        }}
+      >
+        <ModalContent className="flex items-center">
+          <ModalHeader className="flex flex-col gap-1 ">
+            You finished the Session
+          </ModalHeader>
+          <ModalBody>
+            <h3>Congratulations!</h3>
+            <p>
+              You have finished the session, one less to becoming a great trader
+            </p>
+            <Button
+              onClick={() => {
+                setOpenFinishModal(false);
+                setIsFullyFinished(true);
+              }}
+            >
+              Close
+            </Button>
           </ModalBody>
         </ModalContent>
       </Modal>
