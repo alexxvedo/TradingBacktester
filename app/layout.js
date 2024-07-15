@@ -5,6 +5,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/react";
 
 import "./globals.css";
+import { Abhaya_Libre } from "next/font/google";
 export default function RootLayout({ children }) {
   return (
     <ClerkProvider>
@@ -17,6 +18,8 @@ export default function RootLayout({ children }) {
           </NextUIProvider>
         </body>
       </html>
+      <Analytics />
+      <SpeedInsights />
     </ClerkProvider>
   );
 }
