@@ -151,9 +151,9 @@ export default function Sesiones() {
     }
   };
 
-  const handleAccountSizeChange = useCallback((e) => {
+  const handleAccountSizeChange = (e) => {
     setAccountSize(e.target.value);
-  }, []);
+  };
 
   return (
     <main className="flex w-full h-full flex-col p-4">
