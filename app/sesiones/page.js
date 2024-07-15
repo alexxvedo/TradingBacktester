@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import SesionCard from "@/components/Sesiones/SesionCard";
@@ -17,6 +17,8 @@ import { Input, Textarea } from "@nextui-org/input";
 import { DateRangePicker } from "@nextui-org/date-picker";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { useDateFormatter } from "@react-aria/i18n";
+import "react-toastify/dist/ReactToastify.css";
+import { ToastContainer, toast } from "react-toastify";
 
 export default function Sesiones() {
   const { isLoaded, userId } = useAuth();
@@ -42,34 +44,54 @@ export default function Sesiones() {
     return null;
   }
 
+  /**
+   * Asynchronously fetches sessions data from the server.
+   * If the response status is 401, logs the error message and signs out the user.
+   * Otherwise, sets the fetched sessions data, and updates the loading state.
+   * Logs an error message if an error occurs during the fetching process.
+   */
   const fetchSessions = async () => {
+    setIsLoading(true);
+
     try {
       const res = await fetch("/api/sessions");
-      const data = await res.json();
+
       if (res.status === 401) {
-        console.log(data.error);
+        // If the user is not authorized, log the error message and sign out
+        console.log((await res.json()).error);
         signOut();
+      } else {
+        // If the user is authorized, set the fetched sessions data
+        setSessions(await res.json());
       }
-      setSessions(data);
-      setIsLoading(false);
     } catch (error) {
+      // Log an error message if an error occurs during the fetching process
       console.error("Error fetching sessions:", error);
+    } finally {
+      // Update the loading state
+      setIsLoading(false);
     }
   };
 
-  const handleSubmit = async (event) => {
+  /**
+   * Submits a new session to the API and navigates to the newly created session page.
+   *
+   * @return {Promise<void>} - Returns a promise that resolves when the session is created and the user is navigated to the new session page.
+   */
+  const handleSubmit = async () => {
     try {
-      const startDate = new Date(
-        dates.start.year,
-        dates.start.month - 1,
-        dates.start.day,
-      ).toISOString();
-
-      const endDate = new Date(
-        dates.end.year,
-        dates.end.month - 1,
-        dates.end.day,
-      ).toISOString();
+      const [startDate, endDate] = await Promise.all([
+        new Date(
+          dates.start.year,
+          dates.start.month - 1,
+          dates.start.day
+        ).toISOString(),
+        new Date(
+          dates.end.year,
+          dates.end.month - 1,
+          dates.end.day
+        ).toISOString(),
+      ]);
 
       const res = await fetch("/api/sessions", {
         method: "POST",
@@ -90,30 +112,48 @@ export default function Sesiones() {
         setTitle("");
         setDescription("");
         onOpenChange(false);
-        router.push(`/sesiones/${newSession.id}`);
+        toast.success("Session created!");
+        setSessions([...sessions, newSession]);
       } else {
-        console.error("Failed to create session", res.error);
+        toast.error("Error creating session!");
+        throw new Error("Failed to create session");
       }
     } catch (error) {
+      toast.error("Error creating session!");
+
       console.error("Error creating session:", error);
     }
   };
 
+  /**
+   * Fetches available dates from the server and sets the state with the parsed dates.
+   *
+   * @return {Promise<void>} - A promise that resolves when the dates are fetched and the state is set.
+   * @throws {Error} - If there is an error fetching the dates, it throws an error with the message "Failed to load available dates".
+   */
   const fetchAvailableDates = async () => {
     try {
+      // Fetch available dates from the server
       const response = await fetch("/api/dates");
       const dates = await response.json();
+
+      // Parse the dates and set the state with the parsed dates
       setAvailableDates(
-        dates.map((date) => new Date(date).toISOString().split("T")[0]),
+        dates.map((date) => {
+          // Parse the date and convert it to ISO string format without the time
+          const parsedDate = new Date(date).toISOString().split("T")[0];
+          return parsedDate;
+        })
       );
     } catch (error) {
+      // Log an error message if there is an error fetching the dates
       console.error("Failed to load available dates:", error);
     }
   };
 
-  const handleAccountSizeChange = (e) => {
+  const handleAccountSizeChange = useCallback((e) => {
     setAccountSize(e.target.value);
-  };
+  }, []);
 
   return (
     <main className="flex w-full h-full flex-col p-4">
@@ -209,6 +249,17 @@ export default function Sesiones() {
           )}
         </div>
       )}
+      <ToastContainer
+        position="bottom-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
     </main>
   );
 }

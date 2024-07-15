@@ -29,6 +29,8 @@
     "@vercel/speed-insights": "^1.0.12",
     "framer-motion": "^11.2.13",
     "lightweight-charts": "^4.1.6",
+    "localforage": "^1.10.0",
+    "moment-timezone": "^0.5.45",
     "next": "^14.2.5",
     "next-themes": "^0.3.0",
     "nextui-cli": "^0.3.2",
@@ -38,7 +40,8 @@
     "react-datepicker": "^7.3.0",
     "react-dom": "^18",
     "react-dom-confetti": "^0.2.0",
-    "react-rewards": "^2.0.4"
+    "react-rewards": "^2.0.4",
+    "react-toastify": "^10.0.5"
   },
   "devDependencies": {
     "eslint": "^8",
