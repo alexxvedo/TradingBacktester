@@ -14,12 +14,12 @@ export default function RootLayout({ children }) {
           <NextUIProvider>
             <NextThemesProvider attribute="class" defaultTheme="dark">
               {children}
+              <Analytics />
+              <SpeedInsights />
             </NextThemesProvider>
           </NextUIProvider>
         </body>
       </html>
-      <Analytics />
-      <SpeedInsights />
     </ClerkProvider>
   );
 }

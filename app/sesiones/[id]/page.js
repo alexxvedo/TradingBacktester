@@ -147,7 +147,6 @@ export default function SessionPage() {
     limit,
     fetchingOffset = 0,
   }) => {
-    configureLocalForage();
     if (limit) limit = limit + 5000;
     try {
       const response = await fetch(
@@ -159,14 +158,11 @@ export default function SessionPage() {
 
       if (data.length < 5000) setIsFinished(true);
 
-      if (typeof window !== "undefined") {
-        const storedData =
-          (await localforage.getItem(`sessionData_${id}`)) || [];
-        const newData = fetchingOffset === 0 ? data : [...storedData, ...data];
-        await localforage.setItem(`sessionData_${id}`, newData);
-        setInitialData(newData);
-        setDataUpdated(false);
-      }
+      const storedData = (await localforage.getItem(`sessionData_${id}`)) || [];
+      const newData = fetchingOffset === 0 ? data : [...storedData, ...data];
+      await localforage.setItem(`sessionData_${id}`, newData);
+      setInitialData(newData);
+      setDataUpdated(false);
     } catch (error) {
       console.error("Failed to load data by date range:", error);
     }
@@ -236,6 +232,7 @@ export default function SessionPage() {
   }, [markers, lineSeries]); // Only update when markers or lineSeries change
 
   useEffect(() => {
+    configureLocalForage();
     fetchAvailableDates();
   }, []);
 
@@ -250,7 +247,6 @@ export default function SessionPage() {
      * has been fetched and the component state has been updated.
      */
     const fetchSessionData = async () => {
-      configureLocalForage();
       setIsLoading(true);
 
       const res = await fetch(`/api/sessions/${id}`, {
@@ -262,18 +258,16 @@ export default function SessionPage() {
         setAccountSize(data.accountSize);
         setCurrentBalance(data.currentBalance);
 
-        if (typeof window !== "undefined") {
-          // Función para formatear el tamaño en unidades legibles
-          const storedData = await localforage.getItem(`sessionData_${id}`);
-          if (storedData && storedData.length > 0) {
-            setRecoverCandleIndex(data.currentCandleIndex);
+        // Función para formatear el tamaño en unidades legibles
+        const storedData = await localforage.getItem(`sessionData_${id}`);
+        if (storedData && storedData.length > 0) {
+          setRecoverCandleIndex(data.currentCandleIndex);
 
-            setInitialData(storedData);
-            setIsLoading(false);
-            setOffset(data.currentCandleIndex + 5000);
+          setInitialData(storedData);
+          setIsLoading(false);
+          setOffset(data.currentCandleIndex + 5000);
 
-            return;
-          }
+          return;
         }
 
         if (data.startDate && data.endDate) {
