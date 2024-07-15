@@ -148,12 +148,14 @@ export default function SessionPage() {
 
       if (data.length < 5000) setIsFinished(true);
 
-      const storedData = (await localforage.getItem(`sessionData_${id}`)) || [];
-      const newData = fetchingOffset === 0 ? data : [...storedData, ...data];
-      await localforage.setItem(`sessionData_${id}`, newData);
-
-      setInitialData(newData);
-      setDataUpdated(false);
+      if (typeof window !== "undefined") {
+        const storedData =
+          (await localforage.getItem(`sessionData_${id}`)) || [];
+        const newData = fetchingOffset === 0 ? data : [...storedData, ...data];
+        await localforage.setItem(`sessionData_${id}`, newData);
+        setInitialData(newData);
+        setDataUpdated(false);
+      }
     } catch (error) {
       console.error("Failed to load data by date range:", error);
     }
@@ -248,35 +250,18 @@ export default function SessionPage() {
         setAccountSize(data.accountSize);
         setCurrentBalance(data.currentBalance);
 
-        let totalSize = 0;
+        if (typeof window !== "undefined") {
+          // Función para formatear el tamaño en unidades legibles
+          const storedData = await localforage.getItem(`sessionData_${id}`);
+          if (storedData && storedData.length > 0) {
+            setRecoverCandleIndex(data.currentCandleIndex);
 
-        await localforage.iterate((value) => {
-          // Convertir el valor a string y calcular el tamaño en bytes
-          const itemSize = new Blob([JSON.stringify(value)]).size;
-          totalSize += itemSize;
-        });
+            setInitialData(storedData);
+            setIsLoading(false);
+            setOffset(data.currentCandleIndex + 5000);
 
-        var formattedSize;
-        if (totalSize >= 1024 * 1024) {
-          formattedSize = (totalSize / (1024 * 1024)).toFixed(2) + " MB";
-        } else if (totalSize >= 1024) {
-          formattedSize = (totalSize / 1024).toFixed(2) + " KB";
-        } else {
-          formattedSize = totalSize + " bytes";
-        }
-        // Formatear el tamaño en unidades legibles
-        console.log(`Tamaño total de LocalForage: ${formattedSize}`);
-
-        // Función para formatear el tamaño en unidades legibles
-        const storedData = await localforage.getItem(`sessionData_${id}`);
-        if (storedData && storedData.length > 0) {
-          setRecoverCandleIndex(data.currentCandleIndex);
-
-          setInitialData(storedData);
-          setIsLoading(false);
-          setOffset(data.currentCandleIndex + 5000);
-
-          return;
+            return;
+          }
         }
 
         if (data.startDate && data.endDate) {

@@ -49,7 +49,7 @@ export default function PositionCreator({
 
     setPriceColors(finalPriceColors);
     setPreviousPrice(currentPriceStr);
-  }, [currentPrice]);
+  }, [currentPrice, previousPrice]);
 
   const handleOrderSubmit = async (type, size) => {
     console.log("Size:", size);
@@ -80,7 +80,7 @@ export default function PositionCreator({
         setOrders([...orders, { ...newOrder, id: createdOrder.id }]);
         setMarkers((prevMarkers) => {
           const existingMarkerIndex = prevMarkers.findIndex(
-            (marker) => marker.time === currentCandleDate,
+            (marker) => marker.time === currentCandleDate
           );
 
           if (existingMarkerIndex !== -1) {
