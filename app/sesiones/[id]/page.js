@@ -28,7 +28,7 @@ import { Select, SelectItem } from "@nextui-org/select";
 import PositionPanel from "@/components/Sesiones/PositionPanel";
 import { Spinner } from "@nextui-org/spinner";
 import { useTheme } from "next-themes";
-import localforage from "@/utils/localforageConfig";
+import localforage from "localforage";
 import moment from "moment-timezone";
 
 export default function SessionPage() {
@@ -95,6 +95,16 @@ export default function SessionPage() {
     { value: "Pacific/Auckland", label: "UTC+12" },
   ];
 
+  const configureLocalForage = () => {
+    localforage.config({
+      driver: [localforage.INDEXEDDB],
+      name: "backtester",
+      version: 1.0,
+      storeName: "sessionData",
+      description: "Almacén de datos del grafico de la sesión",
+    });
+  };
+
   /**
    * Fetches available dates from the server and sets the state with the parsed dates.
    *
@@ -137,6 +147,7 @@ export default function SessionPage() {
     limit,
     fetchingOffset = 0,
   }) => {
+    configureLocalForage();
     if (limit) limit = limit + 5000;
     try {
       const response = await fetch(
@@ -239,6 +250,7 @@ export default function SessionPage() {
      * has been fetched and the component state has been updated.
      */
     const fetchSessionData = async () => {
+      configureLocalForage();
       setIsLoading(true);
 
       const res = await fetch(`/api/sessions/${id}`, {
