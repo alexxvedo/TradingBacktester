@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import SesionCard from "@/components/Sesiones/SesionCard";
@@ -31,7 +31,6 @@ export default function Sesiones() {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [dates, setDates] = useState({});
   const [availableDates, setAvailableDates] = useState([]);
-  let formatter = useDateFormatter();
 
   useEffect(() => {
     if (userId) {
@@ -159,8 +158,11 @@ export default function Sesiones() {
     <main className="flex w-full h-full flex-col p-4">
       <div className="min-h-[5%] w-full flex justify-between items-center">
         <h2 className="text-2xl font-bold">Sesiones</h2>
-        <Button className="bg-white text-black" onPress={onOpen}>
-          Nueva +
+        <Button
+          onPress={onOpen}
+          className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white"
+        >
+          New
         </Button>
       </div>
       <hr className="my-4 w-full" />
@@ -225,7 +227,7 @@ export default function Sesiones() {
                 <Button color="danger" variant="light" onPress={onClose}>
                   Close
                 </Button>
-                <Button color="primary" onPress={handleSubmit}>
+                <Button color="secondary" onPress={handleSubmit}>
                   Crear Sesión
                 </Button>
               </ModalFooter>

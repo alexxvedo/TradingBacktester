@@ -4,32 +4,18 @@ import React, { useState, useEffect, useRef } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useParams } from "next/navigation"; // Importar useParams
-import { createChart } from "lightweight-charts";
 import PositionCreator from "@/components/PositionCreator";
 import { Button } from "@nextui-org/button";
-import PauseIcon from "@/public/pause.svg";
-import RewindIcon from "@/public/rewind.svg";
-import FastForwardIcon from "@/public/forward.svg";
-import Save from "@/public/save.svg";
-import PlayIcon from "@/public/play.svg";
-import Image from "next/image";
-import { Slider } from "@nextui-org/slider";
-import {
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  useDisclosure,
-} from "@nextui-org/modal";
 
-import { Select, SelectItem } from "@nextui-org/select";
+import { Modal, ModalContent, ModalHeader, ModalBody } from "@nextui-org/modal";
 
 import PositionPanel from "@/components/Sesiones/PositionPanel";
 import { Spinner } from "@nextui-org/spinner";
 import { useTheme } from "next-themes";
 import localforage from "localforage";
 import moment from "moment-timezone";
+import ChartComponent from "@/components/Sesiones/ChartComponent";
+import ChartPlayer from "@/components/Sesiones/ChartPlayer";
 
 export default function SessionPage() {
   const { id } = useParams(); // Usar useParams para obtener el id
@@ -80,7 +66,6 @@ export default function SessionPage() {
     { value: "America/Sao_Paulo", label: "UTC-3" },
     { value: "Atlantic/South_Georgia", label: "UTC-2" },
     { value: "Atlantic/Azores", label: "UTC-1" },
-    { value: "UTC", label: "UTC+0" },
     { value: "Europe/London", label: "UTC+0" },
     { value: "Europe/Paris", label: "UTC+1" },
     { value: "Europe/Berlin", label: "UTC+2" },
@@ -192,110 +177,6 @@ export default function SessionPage() {
     }
   };
 
-  /**
-   * Updates the line series with the markers sorted by time.
-   * The line series is updated with the sorted markers data.
-   * The markers are sorted by time and then mapped to the required format
-   * for the line series.
-   *
-   * @return {void} No return value
-   */
-  useEffect(() => {
-    // Only update the line series if it exists
-    if (lineSeries != null) {
-      // Sort the markers by time
-      const sortedMarkers = markers.sort((a, b) => a.time - b.time);
-
-      // Clear the line series data
-      lineSeries.setData([]);
-      // Set the line series data with the sorted markers data
-      lineSeries.setData(
-        sortedMarkers.map((marker) => ({
-          time: marker.time,
-          value: marker.value,
-        }))
-      );
-      // Set the markers for the line series with the sorted markers data
-      lineSeries.setMarkers(
-        sortedMarkers.map((marker) => ({
-          time: marker.time,
-          position: marker.type === "buy" ? "belowBar" : "aboveBar",
-          shape: marker.type === "buy" ? "arrowUp" : "arrowDown",
-          color: marker.type === "buy" ? "#f68410" : "#f68410",
-          text:
-            marker.type === "buy"
-              ? "Buy " + marker.size + " @ " + marker.value
-              : "Sell " + marker.size + " @ " + marker.value,
-        }))
-      );
-    }
-  }, [markers, lineSeries]); // Only update when markers or lineSeries change
-
-  useEffect(() => {
-    configureLocalForage();
-    fetchAvailableDates();
-  }, []);
-
-  useEffect(() => {
-    setRecoverSession(true);
-
-    /**
-     * Fetches session data from the server and updates the component state
-     * with the fetched data.
-     *
-     * @return {Promise<void>} - A promise that resolves when the session data
-     * has been fetched and the component state has been updated.
-     */
-    const fetchSessionData = async () => {
-      setIsLoading(true);
-
-      const res = await fetch(`/api/sessions/${id}`, {
-        headers: { "Content-Type": "application/json" },
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setAccountSize(data.accountSize);
-        setCurrentBalance(data.currentBalance);
-
-        // Función para formatear el tamaño en unidades legibles
-        const storedData = await localforage.getItem(`sessionData_${id}`);
-        if (storedData && storedData.length > 0) {
-          setRecoverCandleIndex(data.currentCandleIndex);
-
-          setInitialData(storedData);
-          setIsLoading(false);
-          setOffset(data.currentCandleIndex + 5000);
-
-          return;
-        }
-
-        if (data.startDate && data.endDate) {
-          setStartDate(new Date(data.startDate));
-          setEndDate(new Date(data.endDate));
-
-          fetchCSVDataByDateRange({
-            start: new Date(data.startDate),
-            end: new Date(data.endDate),
-            limit: data.currentCandleIndex,
-          });
-
-          setOffset(data.currentCandleIndex + 5000);
-          setRecoverCandleIndex(data.currentCandleIndex);
-        } else {
-          setRecoverSession(false);
-        }
-      } else {
-        console.error("Failed to fetch session data");
-      }
-
-      setIsLoading(false);
-    };
-    if (id) {
-      fetchSessionData();
-    }
-  }, [id]);
-
   const resetAndLoadSeries = () => {
     if (seriesRef.current) {
       chartRef.current.removeSeries(seriesRef.current); // Eliminar la serie actual
@@ -315,146 +196,6 @@ export default function SessionPage() {
       });
     }
   };
-
-  /**
-   * Updates the colors of the chart to match the current theme.
-   */
-  const updateChartColors = () => {
-    if (chartRef.current) {
-      chartRef.current.applyOptions({
-        // Set the background color of the chart
-        layout: {
-          background: {
-            color: theme === "dark" ? "#27272A" : "#efefef",
-          },
-          // Set the text color of the chart
-          textColor: theme === "dark" ? "#efefef" : "#27272A",
-        },
-        // Set the colors of the grid lines
-        grid: {
-          vertLines: {
-            color: theme === "dark" ? "#414141" : "#a1a1a1",
-          },
-          horzLines: {
-            color: theme === "dark" ? "#414141" : "#a1a1a1",
-          },
-        },
-      });
-
-      // Set the colors of the series
-      seriesRef.current.applyOptions({
-        // Green color for up candles
-        upColor: "#26a69a",
-        // Red color for down candles
-        downColor: "#ef5350",
-        // Hide the border of the series
-        borderVisible: false,
-        // Green color for up wicks
-        wickUpColor: "#26a69a",
-        // Red color for down wicks
-        wickDownColor: "#ef5350",
-      });
-    }
-  };
-
-  /**
-   * Creates the chart and sets up the initial options.
-   */
-  useEffect(() => {
-    if (!chartRef.current && chartContainerRef.current) {
-      const chart = createChart(chartContainerRef.current, {
-        // Set the chart to automatically resize
-        autoSize: true,
-
-        // Set the layout options
-        layout: {
-          // Set the background color of the chart
-          background: {
-            color: theme === "dark" ? "#27272A" : "#cfcfcf",
-          },
-          // Set the text color of the chart
-          textColor: theme === "light" ? "#27272A" : "#ffffff",
-        },
-
-        // Set the grid options
-        grid: {
-          // Set the color of the vertical grid lines
-          vertLines: { color: theme === "light" ? "#818181" : "#414141" },
-          // Set the color of the horizontal grid lines
-          horzLines: { color: theme === "light" ? "#818181" : "#414141" },
-        },
-
-        // Set the time scale options
-        timeScale: {
-          // Set the right offset of the time scale
-          rightOffset: 12,
-          // Set the bar spacing of the time scale
-          barSpacing: 5,
-          // Set the time scale to not be fixed to the left edge
-          fixLeftEdge: false,
-          // Set the time scale to not be visible
-          lockVisibleTimeRangeOnResize: true,
-          // Set the right bar to stay on scroll
-          rightBarStaysOnScroll: true,
-          // Set the border of the time scale to not be visible
-          borderVisible: false,
-          // Set the border color of the time scale
-          borderColor: "#313131",
-          // Set the time scale to be visible
-          visible: true,
-          // Set the time scale to be visible on the x axis
-          timeVisible: true,
-        },
-
-        // Set the localization options
-        localization: {
-          // Set the time formatter for the time scale
-          timeFormatter: (timestamp) => {
-            const date = new Date(timestamp * 1000);
-            return date.toLocaleString();
-          },
-        },
-      });
-
-      // Create the candlestick series
-      seriesRef.current = chart.addCandlestickSeries({
-        // Set the price format for the series
-        priceFormat: {
-          type: "price",
-          precision: 5,
-          minMove: 0.00001,
-        },
-        // Set the up color for the series
-        upColor: "#26a69a",
-        // Set the down color for the series
-        downColor: "#ef5350",
-        // Set the border visible for the series
-        borderVisible: false,
-        // Set the up wick color for the series
-        wickUpColor: "#26a69a",
-        // Set the down wick color for the series
-        wickDownColor: "#ef5350",
-      });
-
-      // Create the line series
-      setLineSeries(
-        chart.addLineSeries({
-          // Set the color of the line to be white with 0 opacity (hide the line)
-          color: "rgba(255, 255, 255, 0)",
-          // Set the last value to be visible
-          lastValueVisible: false,
-          // Set the price line to be visible
-          priceLineVisible: false,
-        })
-      );
-
-      // Set the chart to the chart ref
-      chartRef.current = chart;
-    } else {
-      // Update the chart colors if the theme changes
-      updateChartColors();
-    }
-  }, [theme, timeZone]);
 
   /**
    * Generates the final candles based on the given index.
@@ -646,6 +387,97 @@ export default function SessionPage() {
     }
   };
 
+  const updateChartTimezone = () => {
+    if (chartRef.current) {
+      chartRef.current.applyOptions({
+        localization: {
+          timeFormatter: (timestamp) => {
+            return moment
+              .utc(timestamp * 1000)
+              .tz(timeZone)
+              .format("YYYY-MM-DD HH:mm:ss");
+          },
+        },
+        timeScale: {
+          timeVisible: true,
+          secondsVisible: true,
+          tickMarkFormatter: (timestamp) => {
+            return moment
+              .utc(timestamp * 1000)
+              .tz(timeZone)
+              .format("HH:mm");
+          },
+        },
+      });
+      chartRef.current.timeScale().fitContent(); // Ajustar la escala de tiempo para que se adapte al contenido
+    }
+  };
+
+  useEffect(() => {
+    configureLocalForage();
+    fetchAvailableDates();
+  }, []);
+
+  useEffect(() => {
+    setRecoverSession(true);
+
+    /**
+     * Fetches session data from the server and updates the component state
+     * with the fetched data.
+     *
+     * @return {Promise<void>} - A promise that resolves when the session data
+     * has been fetched and the component state has been updated.
+     */
+    const fetchSessionData = async () => {
+      setIsLoading(true);
+
+      const res = await fetch(`/api/sessions/${id}`, {
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setAccountSize(data.accountSize);
+        setCurrentBalance(data.currentBalance);
+
+        // Función para formatear el tamaño en unidades legibles
+        const storedData = await localforage.getItem(`sessionData_${id}`);
+        if (storedData && storedData.length > 0) {
+          setRecoverCandleIndex(data.currentCandleIndex);
+
+          setInitialData(storedData);
+          setIsLoading(false);
+          setOffset(data.currentCandleIndex + 5000);
+
+          return;
+        }
+
+        if (data.startDate && data.endDate) {
+          setStartDate(new Date(data.startDate));
+          setEndDate(new Date(data.endDate));
+
+          fetchCSVDataByDateRange({
+            start: new Date(data.startDate),
+            end: new Date(data.endDate),
+            limit: data.currentCandleIndex,
+          });
+
+          setOffset(data.currentCandleIndex + 5000);
+          setRecoverCandleIndex(data.currentCandleIndex);
+        } else {
+          setRecoverSession(false);
+        }
+      } else {
+        console.error("Failed to fetch session data");
+      }
+
+      setIsLoading(false);
+    };
+    if (id) {
+      fetchSessionData();
+    }
+  }, [id]);
+
   useEffect(() => {
     if (!recoverSession && !isFullyFinished) {
       const intervalID = setInterval(() => {
@@ -679,31 +511,6 @@ export default function SessionPage() {
     recoverSession,
   ]);
 
-  const updateChartTimezone = () => {
-    if (chartRef.current) {
-      chartRef.current.applyOptions({
-        localization: {
-          timeFormatter: (timestamp) => {
-            return moment
-              .utc(timestamp * 1000)
-              .tz(timeZone)
-              .format("YYYY-MM-DD HH:mm:ss");
-          },
-        },
-        timeScale: {
-          timeVisible: true,
-          secondsVisible: true,
-          tickMarkFormatter: (timestamp) => {
-            return moment
-              .utc(timestamp * 1000)
-              .tz(timeZone)
-              .format("HH:mm");
-          },
-        },
-      });
-      chartRef.current.timeScale().fitContent(); // Ajustar la escala de tiempo para que se adapte al contenido
-    }
-  };
   useEffect(() => {
     updateChartTimezone();
   }, [timeZone]);
@@ -717,70 +524,28 @@ export default function SessionPage() {
         }  min-w-full p-4 border-2  rounded-lg items-center justify-between`}
       >
         <div className="flex flex-col h-full max-w-[80%] min-w-[80%] ">
-          <div
-            className="min-w-[80%] min-h-[90%] max-h-full rounded-lg"
-            ref={chartContainerRef}
+          <ChartComponent
+            chartContainerRef={chartContainerRef}
+            chartRef={chartRef}
+            seriesRef={seriesRef}
+            lineSeries={lineSeries}
+            setLineSeries={setLineSeries}
+            markers={markers}
+            timeZone={timeZone}
+            theme={theme}
           />
-          <div className="flex items-center justify-center gap-4 mt-4 max-h-[5%]">
-            <Button variant="ghost" size="icon">
-              <Image
-                src={RewindIcon}
-                alt="Rewind"
-                className={`h-5 w-5 ${
-                  theme === "light" ? "invert" : "invert-0"
-                }`}
-              />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={togglePause}>
-              <Image
-                src={!isPaused ? PauseIcon : PlayIcon}
-                alt="Pause"
-                className={`h-5 w-5 ${
-                  theme === "light" ? "invert" : "invert-0"
-                }`}
-              />
-            </Button>
-            <Slider
-              color={"foreground"}
-              aria-label="Speed"
-              minValue={1}
-              maxValue={300}
-              value={candlePerSecond}
-              onChange={setCandlePerSecond}
-            />
-            <Button variant="ghost" size="icon">
-              <Image
-                src={FastForwardIcon}
-                alt="Fast Forward"
-                className={`h-5 w-5 ${
-                  theme === "light" ? "invert" : "invert-0"
-                }`}
-              />
-            </Button>
-            <Button color="success" size="icon" onClick={saveSessionData}>
-              <Image src={Save} alt="Fast Forward" className="h-5 w-5" />
-            </Button>
-            <Select
-              label="Timezone"
-              id="timeZone"
-              className="w-1/4"
-              selectedKeys={[timeZone]}
-              onChange={(e) => {
-                setTimeZone(e.target.value);
-              }}
-              value={timeZone}
-            >
-              {timeZones.map((timeZone) => (
-                <SelectItem
-                  key={timeZone.value}
-                  value={timeZone.value}
-                  textValue={`${timeZone.label} - ${timeZone.value}`}
-                >
-                  {timeZone.label} - {timeZone.value}
-                </SelectItem>
-              ))}
-            </Select>
-          </div>
+
+          <ChartPlayer
+            isPaused={isPaused}
+            togglePause={togglePause}
+            candlePerSecond={candlePerSecond}
+            setCandlePerSecond={setCandlePerSecond}
+            saveSessionData={saveSessionData}
+            timeZones={timeZones}
+            timeZone={timeZone}
+            setTimeZone={setTimeZone}
+            theme={theme}
+          />
         </div>
         <div className="flex gap-4 max-w-[20%] min-h-full p-6 border-2 rounded-lg ">
           <PositionCreator

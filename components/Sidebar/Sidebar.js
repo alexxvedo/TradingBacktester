@@ -25,91 +25,99 @@ export default function Sidebar() {
 
   if (!mounted) return null;
 
-  if (!userId) return null;
   return (
-    userId && (
-      <div
-        className="max-w-24 min-w-24 min-h-screen max-h-screen p-4"
-        suppressHydrationWarning
+    <div
+      className="max-w-24 min-w-24 min-h-screen max-h-screen p-4"
+      suppressHydrationWarning
+    >
+      <aside
+        className={`${
+          theme === "dark" ? "bg-zinc-900" : "bg-zinc-200"
+        } py-2 px-1 h-full flex flex-col transition-width duration-300 ease-in-out rounded-lg items-center`}
       >
-        <aside
-          className={`${theme === "dark" ? "bg-zinc-900" : "bg-zinc-200"} py-2 px-1 h-full flex flex-col transition-width duration-300 ease-in-out rounded-lg items-center`}
-        >
-          <Link href="/">
-            <Image src={Logo} alt="Pause" className=" w-full" />
-          </Link>
-          <hr
-            className={`${theme === "light" ? "invert" : "invert-0"} my-4  w-full `}
-          />
-          <nav className="h-full w-full flex flex-col flex-grow items-center gap-4 ">
-            <Tooltip content="Sesiones">
-              <Link
-                href="/sesiones"
-                className={`flex w-[80%] items-center justify-center ${theme === "light" ? "invert" : "invert-0"}`}
-              >
-                <Button
-                  variant="light"
-                  isIconOnly
-                  aria-label="Sesiones"
-                  className="max-w-full"
-                >
-                  <Image
-                    src={TradingIcon}
-                    alt="Pause"
-                    className="max-w-[80%] max-h-[80%] light:invert"
-                  />
-                </Button>
-              </Link>
-            </Tooltip>
-            <Tooltip content="Estadísticas">
-              <Link
-                href="/estadisticas"
-                className={`flex w-[80%] items-center justify-center ${theme === "light" ? "invert" : "invert-0"}`}
-              >
-                <Button
-                  variant="light"
-                  isIconOnly
-                  aria-label="Sesiones"
-                  className="max-w-full"
-                >
-                  <Image
-                    src={StatsIcon}
-                    alt="Pause"
-                    className="max-w-[80%] max-h-[80%] light:invert"
-                  />
-                </Button>
-              </Link>
-            </Tooltip>
-          </nav>
-
-          <hr
-            className={`${theme === "light" ? "invert" : "invert-0"} my-4  w-full `}
-          />
-          <div
-            className={`${theme === "light" ? "invert" : "invert-0"} flex flex-col gap-4 items-center justify-center w-full pb-2`}
-          >
-            <Tooltip content={theme === "light" ? "Dark Mode" : "Light Mode"}>
+        <Link href="/">
+          <Image src={Logo} alt="Pause" className=" w-full" />
+        </Link>
+        <hr
+          className={`${
+            theme === "light" ? "invert" : "invert-0"
+          } my-4  w-full `}
+        />
+        <nav className="h-full w-full flex flex-col flex-grow items-center gap-4 ">
+          <Tooltip content="Sesiones">
+            <Link
+              href="/sesiones"
+              className={`flex w-[80%] items-center justify-center ${
+                theme === "light" ? "invert" : "invert-0"
+              }`}
+            >
               <Button
-                isIconOnly
                 variant="light"
-                onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+                isIconOnly
+                aria-label="Sesiones"
+                className="max-w-full"
               >
                 <Image
-                  src={theme === "light" ? DarkModeIcon : LightModeIcon}
-                  alt="Toggle Theme"
-                  className="max-w-[80%] max-h-[80%]"
+                  src={TradingIcon}
+                  alt="Pause"
+                  className="max-w-[80%] max-h-[80%] light:invert"
                 />
               </Button>
-            </Tooltip>
-          </div>
+            </Link>
+          </Tooltip>
+          <Tooltip content="Estadísticas">
+            <Link
+              href="/estadisticas"
+              className={`flex w-[80%] items-center justify-center ${
+                theme === "light" ? "invert" : "invert-0"
+              }`}
+            >
+              <Button
+                variant="light"
+                isIconOnly
+                aria-label="Sesiones"
+                className="max-w-full"
+              >
+                <Image
+                  src={StatsIcon}
+                  alt="Pause"
+                  className="max-w-[80%] max-h-[80%] light:invert"
+                />
+              </Button>
+            </Link>
+          </Tooltip>
+        </nav>
+        <hr
+          className={`${
+            theme === "light" ? "invert" : "invert-0"
+          } my-4  w-full `}
+        />
+        <div
+          className={`${
+            theme === "light" ? "invert" : "invert-0"
+          } flex flex-col gap-4 items-center justify-center w-full pb-2`}
+        >
+          <Tooltip content={theme === "light" ? "Dark Mode" : "Light Mode"}>
+            <Button
+              isIconOnly
+              variant="light"
+              onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+            >
+              <Image
+                src={theme === "light" ? DarkModeIcon : LightModeIcon}
+                alt="Toggle Theme"
+                className="max-w-[80%] max-h-[80%]"
+              />
+            </Button>
+          </Tooltip>
+        </div>
 
-          <div className="flex flex-col gap-4 items-center justify-center w-full pb-2">
-            <SignedIn>
-              <UserButton />
-            </SignedIn>
-          </div>
-        </aside>
-      </div>
-    )
+        <div className="flex flex-col gap-4 items-center justify-center w-full pb-2">
+          <SignedIn>
+            <UserButton />
+          </SignedIn>
+        </div>
+      </aside>
+    </div>
   );
 }

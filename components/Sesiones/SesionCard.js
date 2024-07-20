@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "@nextui-org/react";
-import { Line } from "react-chartjs-2";
 import "chart.js/auto";
 import { Card, CardHeader, CardBody } from "@nextui-org/card";
+import SesionCardContent from "./SesionCardContent";
 
 const SesionCard = ({ sesion }) => {
-  const [operations, setOperations] = useState([]);
   const [balances, setBalances] = useState([]);
 
   useEffect(() => {
@@ -13,7 +12,6 @@ const SesionCard = ({ sesion }) => {
       try {
         const res = await fetch(`/api/operations?sessionId=${sesion.id}`);
         const data = await res.json();
-        setOperations(data);
 
         // Group operations by date and keep the last operation of each day
         const groupedOperations = data.reduce((acc, op) => {
@@ -34,7 +32,7 @@ const SesionCard = ({ sesion }) => {
           (op) => {
             currentBalance += op.profit;
             return { date: op.createdAt, balance: currentBalance };
-          },
+          }
         );
 
         setBalances(calculatedBalances);
@@ -79,41 +77,7 @@ const SesionCard = ({ sesion }) => {
         </small>
       </CardHeader>
       <CardBody>
-        <div className="grid gap-2">
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Start Date:</span>
-            <span>{new Date(sesion.startDate).toLocaleDateString()}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">End Date:</span>
-            <span>{new Date(sesion.endDate).toLocaleDateString()}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Total Operations:</span>
-            <span>{sesion.totalOperations}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Account Size:</span>
-            <span>{sesion.accountSize.toFixed(2)}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Current Balance:</span>
-            <span>{sesion.currentBalance.toFixed(2)}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Profit:</span>
-            <span
-              className={
-                sesion.profitLoss >= 0 ? "text-green-500" : "text-red-500"
-              }
-            >
-              {sesion.profitLoss.toFixed(2)}$
-            </span>
-          </div>
-        </div>
-        <div className="mt-4">
-          <Line data={data} options={options} height={200} />
-        </div>
+        <SesionCardContent sesion={sesion} data={data} options={options} />
       </CardBody>
     </Card>
   );
