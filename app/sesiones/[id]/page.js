@@ -6,6 +6,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import { useParams } from "next/navigation"; // Importar useParams
 import PositionCreator from "@/components/PositionCreator";
 import { Button } from "@nextui-org/button";
+import "@/app/globals.css";
 
 import { Modal, ModalContent, ModalHeader, ModalBody } from "@nextui-org/modal";
 
@@ -16,6 +17,7 @@ import localforage from "localforage";
 import moment from "moment-timezone";
 import ChartComponent from "@/components/Sesiones/ChartComponent";
 import ChartPlayer from "@/components/Sesiones/ChartPlayer";
+import Split from "react-split";
 
 export default function SessionPage() {
   const { id } = useParams(); // Usar useParams para obtener el id
@@ -52,7 +54,9 @@ export default function SessionPage() {
   const [lineSeries, setLineSeries] = useState(null);
 
   const { theme, setTheme } = useTheme();
-  const [timeZone, setTimeZone] = useState("UTC"); // GMT+0 por defecto
+  const [timeZone, setTimeZone] = useState("Europe/London"); // GMT+0 por defecto
+
+  const splitRef = useRef(null);
 
   // Definir la lista de zonas horarias
   const timeZones = [
@@ -134,6 +138,7 @@ export default function SessionPage() {
   }) => {
     if (limit) limit = limit + 5000;
     try {
+      console.log(start, end);
       const response = await fetch(
         `/api/data?start=${start.toISOString()}&end=${end.toISOString()}&limit=${
           limit ? limit : 5000
@@ -316,6 +321,7 @@ export default function SessionPage() {
       return;
     }
 
+    console.log(updateCount, initialData.length);
     if (updateCount === initialData.length && !isFullyFinished) {
       setOpenFinishModal(true);
       setUpdateCount(updateCount + 1);
@@ -409,7 +415,6 @@ export default function SessionPage() {
           },
         },
       });
-      chartRef.current.timeScale().fitContent(); // Ajustar la escala de tiempo para que se adapte al contenido
     }
   };
 
@@ -446,6 +451,16 @@ export default function SessionPage() {
           setRecoverCandleIndex(data.currentCandleIndex);
 
           setInitialData(storedData);
+          if (storedData.length + 2000 >= data.currentCandleIndex) {
+            console.log(data.startDate, data.endDate);
+            fetchCSVDataByDateRange({
+              start: data.startDate,
+              end: data.endDate,
+              offset: data.currentCandleIndex,
+            });
+            setStartDate(new Date(data.startDate));
+            setEndDate(new Date(data.endDate));
+          }
           setIsLoading(false);
           setOffset(data.currentCandleIndex + 5000);
 
@@ -484,21 +499,19 @@ export default function SessionPage() {
         updateChart(); // Update the chart
       }, 1000 / candlePerSecond);
       return () => clearInterval(intervalID); // Clear the interval on cleanup
-    } else if (!isFullyFinished) {
-      if (initialData.length != 0) {
-        const candles = getFinalCandles(recoverCandleIndex);
+    } else if (initialData.length != 0) {
+      const candles = getFinalCandles(recoverCandleIndex);
 
-        for (var i = 0; i < candles.length; i++) {
-          try {
-            seriesRef.current.update(candles[i]); // Update each candle in the series
-          } catch (error) {
-            console.error(error);
-          }
+      for (var i = 0; i < candles.length; i++) {
+        try {
+          seriesRef.current.update(candles[i]); // Update each candle in the series
+        } catch (error) {
+          console.error(error);
         }
-        setRecoverSession(false); // Reset recover session flag
-      } else if (isFullyFinished && !isPaused) {
-        setOpenFinishModal(true); // Open finish modal if fully finished and not paused
       }
+      setRecoverSession(false); // Reset recover session flag
+    } else if (isFullyFinished && !isPaused) {
+      setOpenFinishModal(true); // Open finish modal if fully finished and not paused
     }
   }, [
     initialData,
@@ -514,69 +527,96 @@ export default function SessionPage() {
   useEffect(() => {
     updateChartTimezone();
   }, [timeZone]);
+
+  const handleResize = (sizes) => {
+    console.log(sizes[1]);
+    if (sizes[1] < 11) {
+      setPanelOpen(false);
+    } else {
+      setPanelOpen(true);
+    }
+  };
+
   const togglePause = () => setIsPaused(!isPaused);
 
   return (
-    <div className="flex flex-col min-h-[100%] min-w-full p-4 gap-4 border-2 rounded-lg">
-      <div
-        className={`flex flex-row ${
-          panelOpen ? "min-h-[70%] max-h-[70%]" : "min-h-[92%] max-h-[92%]"
-        }  min-w-full p-4 border-2  rounded-lg items-center justify-between`}
+    <div className="flex flex-col min-h-[100%] min-w-full p-4 border-2 rounded-lg">
+      <Split
+        direction="vertical"
+        sizes={panelOpen ? [69, 30] : [92, 5]} // Ajusta los tamaños según tu preferencia
+        minSize={[600, 50]} // Tamaños mínimos del gráfico y el panel
+        expandToMin={false}
+        gutterSize={6}
+        gutterAlign="center"
+        snapOffset={0}
+        dragInterval={1}
+        className="flex flex-col w-full h-full justify-between"
+        onDrag={(sizes) => handleResize(sizes)}
       >
-        <div className="flex flex-col h-full max-w-[80%] min-w-[80%] ">
-          <ChartComponent
-            chartContainerRef={chartContainerRef}
-            chartRef={chartRef}
-            seriesRef={seriesRef}
-            lineSeries={lineSeries}
-            setLineSeries={setLineSeries}
-            markers={markers}
-            timeZone={timeZone}
-            theme={theme}
-          />
+        <Split
+          direction="horizontal"
+          sizes={panelOpen ? [69, 30] : [92, 7]} // Ajusta los tamaños según tu preferencia
+          minSize={[1000, 100]} // Tamaños mínimos del gráfico y el panel
+          expandToMin={false}
+          gutterSize={4}
+          gutterAlign="right"
+          snapOffset={6}
+          dragInterval={1}
+          className="flex flex-row w-full h-full justify-between"
+          onDrag={(sizes) => handleResize(sizes)}
+        >
+          <div className="flex flex-col w-full h-full ">
+            <ChartComponent
+              isLoading={isLoading}
+              chartContainerRef={chartContainerRef}
+              chartRef={chartRef}
+              seriesRef={seriesRef}
+              lineSeries={lineSeries}
+              setLineSeries={setLineSeries}
+              markers={markers}
+              timeZone={timeZone}
+              theme={theme}
+            />
+            <ChartPlayer
+              isPaused={isPaused}
+              togglePause={togglePause}
+              candlePerSecond={candlePerSecond}
+              setCandlePerSecond={setCandlePerSecond}
+              saveSessionData={saveSessionData}
+              timeZones={timeZones}
+              timeZone={timeZone}
+              setTimeZone={setTimeZone}
+              theme={theme}
+            />
+          </div>
+          <div className="w-[30%] border-2 rounded-lg">
+            <PositionCreator
+              currentPrice={currentPrice}
+              currentBalance={currentBalance}
+              saveSessionData={saveSessionData}
+              sessionId={id}
+              orders={orders}
+              setOrders={setOrders}
+              markers={markers}
+              setMarkers={setMarkers}
+              currentCandleDate={currentCandle.time}
+            />
+          </div>
+        </Split>
 
-          <ChartPlayer
-            isPaused={isPaused}
-            togglePause={togglePause}
-            candlePerSecond={candlePerSecond}
-            setCandlePerSecond={setCandlePerSecond}
-            saveSessionData={saveSessionData}
-            timeZones={timeZones}
-            timeZone={timeZone}
-            setTimeZone={setTimeZone}
-            theme={theme}
-          />
-        </div>
-        <div className="flex gap-4 max-w-[20%] min-h-full p-6 border-2 rounded-lg ">
-          <PositionCreator
-            currentPrice={currentPrice}
-            currentBalance={currentBalance}
-            saveSessionData={saveSessionData}
+        <div className="w-full h-full border-2 rounded-lg">
+          <PositionPanel
+            panelOpen={panelOpen}
+            setPanelOpen={setPanelOpen}
             sessionId={id}
+            currentPrice={currentPrice}
             orders={orders}
             setOrders={setOrders}
-            markers={markers}
-            setMarkers={setMarkers}
-            currentCandleDate={currentCandle.time}
+            saveSessionData={saveSessionData}
+            accountSize={accountSize}
           />
         </div>
-      </div>
-      <div
-        className={`${
-          panelOpen ? "max-h-[28%] min-h-[28%]" : "max-h-[5%] h-[5%]"
-        } w-full min-w-full border-2 rounded-lg`}
-      >
-        <PositionPanel
-          panelOpen={panelOpen}
-          setPanelOpen={setPanelOpen}
-          sessionId={id}
-          currentPrice={currentPrice}
-          orders={orders}
-          setOrders={setOrders}
-          saveSessionData={saveSessionData}
-          accountSize={accountSize}
-        />
-      </div>
+      </Split>
       <Modal
         isOpen={isLoading}
         onOpenChange={setIsLoading}
@@ -587,7 +627,7 @@ export default function SessionPage() {
         }}
       >
         <ModalContent className="flex items-center">
-          <ModalHeader className="flex flex-col gap-1 ">
+          <ModalHeader className="flex flex-col gap-1">
             Loading Data
           </ModalHeader>
           <ModalBody>
@@ -609,7 +649,7 @@ export default function SessionPage() {
         }}
       >
         <ModalContent className="flex items-center">
-          <ModalHeader className="flex flex-col gap-1 ">
+          <ModalHeader className="flex flex-col gap-1">
             You finished the Session
           </ModalHeader>
           <ModalBody>
@@ -618,6 +658,8 @@ export default function SessionPage() {
               You have finished the session, one less to becoming a great trader
             </p>
             <Button
+              variant="light"
+              color="danger"
               onClick={() => {
                 setOpenFinishModal(false);
                 setIsFullyFinished(true);

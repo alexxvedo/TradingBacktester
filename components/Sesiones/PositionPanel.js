@@ -5,8 +5,8 @@ import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 
 import Image from "next/image";
-import ArrowLeft from "@/public/arrow_left.svg";
-import ArrowRight from "@/public/arrow_right.svg";
+import CloseFullScreen from "@/public/close_fullscreen.svg";
+import OpenFullScreen from "@/public/open_fullscreen.svg";
 import PositionsTable from "@/components/Sesiones/PositionsTable";
 import HistoryTable from "@/components/Sesiones/HistoryTable";
 import { Tabs, Tab } from "@nextui-org/tabs";
@@ -98,8 +98,12 @@ export default function PositionPanel({
 
   return (
     userId && (
-      <div className="flex flex-row px-4 max-h-full min-h-full h-full w-full rounded-lg align-middle items-center justify-center">
-        <div className="w-full h-[95%] flex flex-col max-h-[95%]">
+      <div
+        className={`flex flex-row px-4 max-h-full min-h-full h-full w-full rounded-lg align-middle items-center justify-center ${
+          panelOpen ? "p-4" : ""
+        }`}
+      >
+        <div className="w-full h-[95%] flex flex-col max-h-[95%] items-center justify-center">
           <Tabs
             aria-label="Options"
             className="w-full "
@@ -115,7 +119,7 @@ export default function PositionPanel({
               className="w-full h-full flex"
             >
               {panelOpen && (
-                <div className="w-full max-h-[80%] h-[80%] overflow-hidden ">
+                <div className="w-full h-full overflow-hidden ">
                   {!fetchingPositions ? (
                     <PositionsTable
                       orders={orders}
@@ -130,7 +134,7 @@ export default function PositionPanel({
                   ) : (
                     <div
                       className="min-w-full flex flex-col items-center
-                    justify-center"
+                      justify-center"
                     >
                       <p>Loading Positions...</p>
                       <div className="border-4 border-t-transparent border-grey-500 w-4 h-4 rounded-full animate-spin"></div>
@@ -141,7 +145,7 @@ export default function PositionPanel({
             </Tab>
             <Tab key="History" title="History" className="w-full h-full flex">
               {panelOpen && (
-                <div className="w-full max-h-[80%] h-[80%] overflow-hidden ">
+                <div className="w-full h-full  ">
                   {!fetchingPositions ? (
                     <HistoryTable
                       history={history}
@@ -153,7 +157,7 @@ export default function PositionPanel({
                   ) : (
                     <div
                       className="min-w-full flex flex-col items-center
-                    justify-center"
+                      justify-center"
                     >
                       <p>Loading Positions...</p>
                       <div className="border-4 border-t-transparent border-grey-500 w-4 h-4 rounded-full animate-spin"></div>
@@ -165,10 +169,12 @@ export default function PositionPanel({
           </Tabs>
         </div>
         <div
-          className={`w-auto h-[95%] flex ${panelOpen ? "items-start" : "items-center"} ${theme === "light" ? "invert" : "invert-0"}`}
+          className={`w-auto h-[95%] flex ${
+            panelOpen ? "items-start" : "items-center"
+          } ${theme === "light" ? "invert" : "invert-0"}`}
         >
           <Image
-            src={ArrowLeft}
+            src={panelOpen ? CloseFullScreen : OpenFullScreen}
             alt="Arrow Left"
             width={24}
             height={24}

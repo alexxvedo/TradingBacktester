@@ -1,5 +1,5 @@
 {
-  "name": "prueba-clerk",
+  "name": "backtesternext",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -17,6 +17,7 @@
     "@nextui-org/modal": "^2.0.36",
     "@nextui-org/react": "^2.4.2",
     "@nextui-org/select": "^2.2.2",
+    "@nextui-org/skeleton": "^2.0.31",
     "@nextui-org/slider": "^2.2.12",
     "@nextui-org/spinner": "^2.0.30",
     "@nextui-org/system": "^2.2.2",
@@ -40,7 +41,9 @@
     "react-datepicker": "^7.3.0",
     "react-dom": "^18",
     "react-dom-confetti": "^0.2.0",
+    "react-resizable": "^3.0.5",
     "react-rewards": "^2.0.4",
+    "react-split": "^2.0.14",
     "react-toastify": "^10.0.5"
   },
   "devDependencies": {

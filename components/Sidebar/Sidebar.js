@@ -25,6 +25,7 @@ export default function Sidebar() {
 
   if (!mounted) return null;
 
+  if (!userId) return null;
   return (
     <div
       className="max-w-24 min-w-24 min-h-screen max-h-screen p-4"
@@ -36,7 +37,7 @@ export default function Sidebar() {
         } py-2 px-1 h-full flex flex-col transition-width duration-300 ease-in-out rounded-lg items-center`}
       >
         <Link href="/">
-          <Image src={Logo} alt="Pause" className=" w-full" />
+          <Image src={Logo} alt="Pause" className=" w-full" priority={true} />
         </Link>
         <hr
           className={`${

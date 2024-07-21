@@ -40,7 +40,7 @@ export default function ChartPlayer({
         color={"foreground"}
         aria-label="Speed"
         minValue={1}
-        maxValue={300}
+        maxValue={200}
         value={candlePerSecond}
         onChange={setCandlePerSecond}
       />

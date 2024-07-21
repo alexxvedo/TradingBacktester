@@ -5,7 +5,35 @@
 html,
 body,
 #__next {
-    height: 100%;
-    margin: 0;
-    padding: 0;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.gutter {
+  background-color: transparent;
+}
+
+.gutter-vertical:hover {
+  box-shadow: 0 0 0 2px #444;
+  background-color: #444;
+}
+
+.gutter-horizontal:hover {
+  box-shadow: 0 0 0 2px #444;
+  background-color: #444;
+}
+
+.gutter-vertical {
+  margin-top: 20px;
+  margin-bottom: -5px;
+  border-radius: 8px 8px 0px 0px;
+  z-index: 10;
+  cursor: row-resize;
+}
+.gutter-horizontal {
+  margin-right: -28px;
+  border-radius: 8px 0px 0px 8px;
+  z-index: 10;
+  cursor: column-resize;
 }

@@ -1,7 +1,11 @@
 "use client";
+
+// React and nextjs
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
+
+// Components
 import SesionCard from "@/components/Sesiones/SesionCard";
 import {
   Modal,
@@ -15,10 +19,13 @@ import {
 import { Select, SelectItem } from "@nextui-org/select";
 import { Input, Textarea } from "@nextui-org/input";
 import { DateRangePicker } from "@nextui-org/date-picker";
-import { getLocalTimeZone, today } from "@internationalized/date";
-import { useDateFormatter } from "@react-aria/i18n";
 import "react-toastify/dist/ReactToastify.css";
 import { ToastContainer, toast } from "react-toastify";
+import SkeletonSesionCard from "@/components/Sesiones/Skeletons/SkeletonSesionCard";
+
+// Utils
+import { fetchSessions, fetchAvailableDates } from "@/utils/sessions";
+import { getLocalTimeZone, today } from "@internationalized/date";
 
 export default function Sesiones() {
   const { isLoaded, userId } = useAuth();
@@ -34,43 +41,14 @@ export default function Sesiones() {
 
   useEffect(() => {
     if (userId) {
-      fetchSessions();
-      fetchAvailableDates();
+      fetchSessions(setIsLoading, setSessions);
+      fetchAvailableDates(setAvailableDates);
     }
   }, [userId]);
 
   if (!isLoaded || !userId) {
     return null;
   }
-
-  /**
-   * Asynchronously fetches sessions data from the server.
-   * If the response status is 401, logs the error message and signs out the user.
-   * Otherwise, sets the fetched sessions data, and updates the loading state.
-   * Logs an error message if an error occurs during the fetching process.
-   */
-  const fetchSessions = async () => {
-    setIsLoading(true);
-
-    try {
-      const res = await fetch("/api/sessions");
-
-      if (res.status === 401) {
-        // If the user is not authorized, log the error message and sign out
-        console.log((await res.json()).error);
-        signOut();
-      } else {
-        // If the user is authorized, set the fetched sessions data
-        setSessions(await res.json());
-      }
-    } catch (error) {
-      // Log an error message if an error occurs during the fetching process
-      console.error("Error fetching sessions:", error);
-    } finally {
-      // Update the loading state
-      setIsLoading(false);
-    }
-  };
 
   /**
    * Submits a new session to the API and navigates to the newly created session page.
@@ -121,32 +99,6 @@ export default function Sesiones() {
       toast.error("Error creating session!");
 
       console.error("Error creating session:", error);
-    }
-  };
-
-  /**
-   * Fetches available dates from the server and sets the state with the parsed dates.
-   *
-   * @return {Promise<void>} - A promise that resolves when the dates are fetched and the state is set.
-   * @throws {Error} - If there is an error fetching the dates, it throws an error with the message "Failed to load available dates".
-   */
-  const fetchAvailableDates = async () => {
-    try {
-      // Fetch available dates from the server
-      const response = await fetch("/api/dates");
-      const dates = await response.json();
-
-      // Parse the dates and set the state with the parsed dates
-      setAvailableDates(
-        dates.map((date) => {
-          // Parse the date and convert it to ISO string format without the time
-          const parsedDate = new Date(date).toISOString().split("T")[0];
-          return parsedDate;
-        })
-      );
-    } catch (error) {
-      // Log an error message if there is an error fetching the dates
-      console.error("Failed to load available dates:", error);
     }
   };
 
@@ -237,11 +189,13 @@ export default function Sesiones() {
       </Modal>
 
       {isLoading ? (
-        <div className="flex items-center justify-center w-full h-full">
-          <div className="border-4 border-t-transparent border-grey-500 w-4 h-4 rounded-full animate-spin"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-6">
+          {[...Array(8)].map((_, index) => (
+            <SkeletonSesionCard key={index} />
+          ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 p-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-6 ">
           {sessions.length > 0 ? (
             sessions.map((session, index) => (
               <SesionCard key={index} sesion={session} />

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "@nextui-org/react";
+import { Button, Link } from "@nextui-org/react";
 import "chart.js/auto";
 import { Card, CardHeader, CardBody } from "@nextui-org/card";
 import SesionCardContent from "./SesionCardContent";
@@ -64,17 +64,24 @@ const SesionCard = ({ sesion }) => {
       },
     },
     maintainAspectRatio: true,
+    responsive: true,
+    height: 300, // or any desired height
   };
 
   return (
-    <Card className="max-w-[400px]">
-      <CardHeader className="flex items-center justify-between flex-col w-full gap-2">
-        <Link href={`/sesiones/${sesion.id}`} className="text-white">
-          <h4 className="font-bold text-2xl">{sesion.title}</h4>
+    <Card className="max-w-[500px] h-full">
+      <CardHeader className="flex items-center justify-between flex-row w-full gap-2">
+        <div className="max-w-[55%]">
+          <h4 className="font-bold text-2xl truncate">{sesion.title}</h4>
+          <small className="text-default-500">
+            {new Date(sesion.createdAt).toLocaleString()}
+          </small>
+        </div>
+        <Link href={`/sesiones/${sesion.id}`} className="max-w-[45%] ">
+          <Button variant="ghost" color="secondary">
+            Go to session
+          </Button>
         </Link>
-        <small className="text-default-500">
-          {new Date(sesion.createdAt).toLocaleString()}
-        </small>
       </CardHeader>
       <CardBody>
         <SesionCardContent sesion={sesion} data={data} options={options} />

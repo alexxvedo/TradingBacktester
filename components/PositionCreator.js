@@ -59,7 +59,6 @@ export default function PositionCreator({
       entryPrice: currentPrice,
       id: orders.length + 1,
     };
-    setOrders([...orders, { ...newOrder }]);
 
     try {
       const res = await fetch("/api/operations", {

@@ -1,3 +1,5 @@
+import "@/app/globals.css";
+
 export const metadata = {
   title: "Backtester",
   description: "Sesiones",

@@ -19,9 +19,7 @@ export default function PositionsTable({
   accountSize,
 }) {
   const closePosition = (key) => async () => {
-    console.log(accountSize);
     const order = orders.find((order) => order.id === key);
-    setOrders(orders.filter((order) => order.id !== key));
 
     const newOrder = {
       ...order,
@@ -113,12 +111,7 @@ export default function PositionsTable({
           ))}
         </TableBody>
       ) : (
-        <TableBody
-          className="max-h-[20%] overflow-hidden flex"
-          emptyContent={"No rows to display."}
-        >
-          {[]}
-        </TableBody>
+        <TableBody emptyContent={"No rows to display."}>{[]}</TableBody>
       )}
     </Table>
   );

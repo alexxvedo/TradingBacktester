@@ -2,6 +2,7 @@ import { createChart } from "lightweight-charts";
 import { useEffect } from "react";
 
 export default function ChartComponent({
+  isLoading,
   chartContainerRef,
   chartRef,
   seriesRef,
