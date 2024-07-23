@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@/generated/clientSessions";
 import { auth, currentUser } from "@clerk/nextjs/server";
 
 const prisma = new PrismaClient();
@@ -18,10 +18,17 @@ export async function POST(req) {
   console.log("Estoy aqui");
 
   try {
-    const { title, description, accountSize, startDate, endDate } =
-      await req.json();
-    console.log(accountSize);
-
+    const {
+      title,
+      description,
+      accountSize,
+      startDate,
+      endDate,
+      pair,
+      timeframe,
+      realistic,
+    } = await req.json();
+    console.log();
     const sesion = await prisma.session.create({
       data: {
         userId: userId,
@@ -38,6 +45,8 @@ export async function POST(req) {
         endDate,
         accountSize: parseFloat(accountSize),
         currentBalance: parseFloat(accountSize),
+        currency: pair,
+        interval: timeframe,
       },
     });
 
@@ -57,7 +66,7 @@ export async function POST(req) {
         headers: {
           "Content-Type": "application/json",
         },
-      },
+      }
     );
   }
 }
@@ -93,7 +102,7 @@ export async function GET() {
         headers: {
           "Content-Type": "application/json",
         },
-      },
+      }
     );
   }
 }

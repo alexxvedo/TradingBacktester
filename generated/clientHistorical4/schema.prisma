@@ -1,0 +1,20 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../generated/clientHistorical4"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL_HISTORICAL4")
+}
+
+model HistoricalData1Sec {
+  timestamp DateTime @id @db.Timestamp(0)
+  currency  String
+  open      Float
+  high      Float
+  low       Float
+  close     Float
+
+  @@index([timestamp, currency])
+}

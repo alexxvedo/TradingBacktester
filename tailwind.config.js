@@ -15,4 +15,9 @@ module.exports = {
   },
   darkMode: "class",
   plugins: [nextui()],
+  variants: {
+    extend: {
+      backgroundOpacity: ["active"],
+    },
+  },
 };

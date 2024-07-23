@@ -43,6 +43,8 @@ export default function SessionPage() {
   const [recoverCandleIndex, setRecoverCandleIndex] = useState(0);
   const [accountSize, setAccountSize] = useState("");
   const [currentBalance, setCurrentBalance] = useState("");
+  const [pair, setPair] = useState("");
+  const [timeframe, setTimeframe] = useState("");
 
   const [panelOpen, setPanelOpen] = useState(true);
   const [orders, setOrders] = useState([]);
@@ -135,14 +137,16 @@ export default function SessionPage() {
     end,
     limit,
     fetchingOffset = 0,
+    pair,
+    timeframe,
   }) => {
     if (limit) limit = limit + 5000;
     try {
       console.log(start, end);
       const response = await fetch(
-        `/api/data?start=${start.toISOString()}&end=${end.toISOString()}&limit=${
+        `/api/data?start=${start}&end=${end}&limit=${
           limit ? limit : 5000
-        }&offset=${fetchingOffset}`
+        }&offset=${fetchingOffset}&pair=${pair}&interval=${timeframe}`
       );
       const data = await response.json();
 
@@ -153,6 +157,7 @@ export default function SessionPage() {
       await localforage.setItem(`sessionData_${id}`, newData);
       setInitialData(newData);
       setDataUpdated(false);
+      console.log(newData);
     } catch (error) {
       console.error("Failed to load data by date range:", error);
     }
@@ -222,12 +227,29 @@ export default function SessionPage() {
     while (localUpdateCount < (index != 0 ? index - 1 : index)) {
       const baseIndex = localUpdateCount; // Get the base index for the current candle
       const dataPoint = initialData[baseIndex]; // Get the data point for the current candle
+      var currentMinute;
+      var previousMinute;
+      if (timeframe === "1h" || timeframe === "4h") {
+        currentMinute = new Date(dataPoint.timestamp).getHours();
+        previousMinute =
+          baseIndex != 0
+            ? new Date(initialData[baseIndex - 1].timestamp).getHours()
+            : -1; // Get the previous minute of the data point
+      } else if (timeframe === "1d") {
+        currentMinute = new Date(dataPoint.timestamp).getDay();
+        previousMinute =
+          baseIndex != 0
+            ? new Date(initialData[baseIndex - 1].timestamp).getDay()
+            : -1; // Get the previous minute of the data point
+      } else {
+        currentMinute = new Date(dataPoint.timestamp).getMinutes(); // Get the current minute of the data point
+        previousMinute =
+          baseIndex != 0
+            ? new Date(initialData[baseIndex - 1].timestamp).getMinutes()
+            : -1; // Get the previous minute of the data point
+      }
 
-      const currentMinute = new Date(dataPoint.timestamp).getMinutes(); // Get the current minute of the data point
-      const previousMinute =
-        baseIndex != 0
-          ? new Date(initialData[baseIndex - 1].timestamp).getMinutes()
-          : -1; // Get the previous minute of the data point
+      console.log(currentMinute, previousMinute);
 
       // If the current minute is different from the previous minute
       if (currentMinute !== previousMinute) {
@@ -333,12 +355,29 @@ export default function SessionPage() {
     const baseIndex = updateCount;
     const dataPoint = initialData[baseIndex];
 
-    const currentMinute = new Date(dataPoint.timestamp).getMinutes();
+    var currentMinute, previousMinute;
 
-    const previousMinute =
-      baseIndex !== 0
-        ? new Date(initialData[baseIndex - 1].timestamp).getMinutes()
-        : -1;
+    if (timeframe === "1h" || timeframe === "4h") {
+      currentMinute = new Date(dataPoint.timestamp).getHours();
+      previousMinute =
+        baseIndex != 0
+          ? new Date(initialData[baseIndex - 1].timestamp).getHours()
+          : -1; // Get the previous minute of the data point
+    } else if (timeframe === "1d") {
+      currentMinute = new Date(dataPoint.timestamp).getDay();
+      previousMinute =
+        baseIndex != 0
+          ? new Date(initialData[baseIndex - 1].timestamp).getDay()
+          : -1; // Get the previous minute of the data point
+    } else {
+      currentMinute = new Date(dataPoint.timestamp).getMinutes(); // Get the current minute of the data point
+      previousMinute =
+        baseIndex != 0
+          ? new Date(initialData[baseIndex - 1].timestamp).getMinutes()
+          : -1; // Get the previous minute of the data point
+    }
+
+    console.log(currentMinute, previousMinute);
 
     if (currentMinute !== previousMinute) {
       // Ensure that the new candle starts exactly where the previous one ended
@@ -348,9 +387,9 @@ export default function SessionPage() {
         time: new Date(dataPoint.timestamp).getTime() / 1000,
 
         open: openPrice,
-        high: openPrice,
-        low: openPrice,
-        close: openPrice,
+        high: dataPoint.high,
+        low: dataPoint.low,
+        close: dataPoint.close,
       };
       seriesRef.current.update(newCandle);
       setCurrentCandle(newCandle);
@@ -420,7 +459,6 @@ export default function SessionPage() {
 
   useEffect(() => {
     configureLocalForage();
-    fetchAvailableDates();
   }, []);
 
   useEffect(() => {
@@ -444,6 +482,9 @@ export default function SessionPage() {
         const data = await res.json();
         setAccountSize(data.accountSize);
         setCurrentBalance(data.currentBalance);
+        console.log(data);
+        setPair(data.currency);
+        setTimeframe(data.interval);
 
         // Función para formatear el tamaño en unidades legibles
         const storedData = await localforage.getItem(`sessionData_${id}`);
@@ -457,6 +498,8 @@ export default function SessionPage() {
               start: data.startDate,
               end: data.endDate,
               offset: data.currentCandleIndex,
+              pair: data.currency,
+              timeframe: data.interval,
             });
             setStartDate(new Date(data.startDate));
             setEndDate(new Date(data.endDate));
@@ -475,6 +518,8 @@ export default function SessionPage() {
             start: new Date(data.startDate),
             end: new Date(data.endDate),
             limit: data.currentCandleIndex,
+            pair: data.currency,
+            timeframe: data.interval,
           });
 
           setOffset(data.currentCandleIndex + 5000);

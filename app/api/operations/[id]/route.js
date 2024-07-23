@@ -1,6 +1,6 @@
 // /api/operations/[id]/routes.js
 
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@/generated/clientSessions";
 import { auth, currentUser } from "@clerk/nextjs/server";
 
 const prisma = new PrismaClient();
@@ -39,7 +39,7 @@ export async function PUT(req, { params }) {
     const totalOperations = operations.length;
     const profitLoss = operations.reduce(
       (acc, op) => acc + (op.profit || 0),
-      0,
+      0
     );
     const currentBalance = accountSize + profitLoss;
     const averageGain = totalOperations > 0 ? profitLoss / totalOperations : 0;
@@ -92,7 +92,7 @@ export async function PUT(req, { params }) {
         headers: {
           "Content-Type": "application/json",
         },
-      },
+      }
     );
   }
 }

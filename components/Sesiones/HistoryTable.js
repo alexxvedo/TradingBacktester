@@ -35,8 +35,8 @@ export default function HistoryTable({
                   {new Date(order.createdAt).toLocaleString()}
                 </TableCell>
                 <TableCell>{order.type.toUpperCase()}</TableCell>
-                <TableCell>{order.entryPrice.toFixed(4)}</TableCell>
-                <TableCell>{order.exitPrice.toFixed(4)}</TableCell>
+                <TableCell>{order.entryPrice.toFixed(5)}</TableCell>
+                <TableCell>{order.exitPrice.toFixed(5)}</TableCell>
 
                 <TableCell>{order.size / 100000}</TableCell>
                 <TableCell

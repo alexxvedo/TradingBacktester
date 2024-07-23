@@ -63,22 +63,30 @@ export const fetchSessions = async (setIsLoading, setSessions) => {
  * @return {Promise<void>} - A promise that resolves when the dates are fetched and the state is set.
  * @throws {Error} - If there is an error fetching the dates, it throws an error with the message "Failed to load available dates".
  */
-export const fetchAvailableDates = async (setAvailableDates) => {
+export const fetchAvailableDates = async (
+  setAvailableDates,
+  currency,
+  interval,
+  realistic
+) => {
   try {
-    // Fetch available dates from the server
-    const response = await fetch("/api/dates");
+    // Construir la URL con los parámetros de consulta
+    const query = new URLSearchParams({ currency, interval, realistic });
+    const response = await fetch(`/api/dates?${query.toString()}`);
     const dates = await response.json();
 
-    // Parse the dates and set the state with the parsed dates
+    console.log(dates);
+
+    // Parsear las fechas y actualizar el estado
     setAvailableDates(
       dates.map((date) => {
-        // Parse the date and convert it to ISO string format without the time
+        // Parsear la fecha y convertirla al formato ISO sin la hora
         const parsedDate = new Date(date).toISOString().split("T")[0];
         return parsedDate;
       })
     );
   } catch (error) {
-    // Log an error message if there is an error fetching the dates
+    // Registrar un mensaje de error si hay un error al obtener las fechas
     console.error("Failed to load available dates:", error);
   }
 };

@@ -25,7 +25,6 @@ export default function Sidebar() {
 
   if (!mounted) return null;
 
-  if (!userId) return null;
   return (
     <div
       className="max-w-24 min-w-24 min-h-screen max-h-screen p-4"

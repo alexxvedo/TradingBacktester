@@ -1,8 +1,13 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient as Historical1 } from "@/generated/clientHistorical1";
+import { PrismaClient as Historical2 } from "@/generated/clientHistorical2";
+import { PrismaClient as Historical3 } from "@/generated/clientHistorical3";
+import { PrismaClient as Historical4 } from "@/generated/clientHistorical4";
 import { auth } from "@clerk/nextjs/server";
 
-const prisma = new PrismaClient();
-
+const prismaHistorical1 = new Historical1();
+const prismaHistorical2 = new Historical2();
+const prismaHistorical3 = new Historical3();
+const prismaHistorical4 = new Historical4();
 /**
  * Fetches data from the database based on the provided date range and pagination parameters.
  *
@@ -29,6 +34,8 @@ export async function GET(req) {
   let end = url.searchParams.get("end");
   const offset = parseInt(url.searchParams.get("offset")) || 0;
   const limit = parseInt(url.searchParams.get("limit")) || 2000;
+  const pair = url.searchParams.get("pair");
+  const timeframe = url.searchParams.get("interval");
 
   // If the date range parameters are missing, return an error response
   if (!start || !end) {
@@ -47,12 +54,14 @@ export async function GET(req) {
 
   try {
     // Fetch data from the database based on the date range and pagination parameters
-    const data = await prisma.datos.findMany({
+    const data = await prismaHistorical1.historicalData.findMany({
       where: {
         timestamp: {
           gte: new Date(start),
           lte: new Date(end),
         },
+        currency: pair,
+        interval: timeframe,
       },
       orderBy: {
         timestamp: "asc",

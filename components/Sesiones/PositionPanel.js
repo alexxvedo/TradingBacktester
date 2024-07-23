@@ -94,8 +94,6 @@ export default function PositionPanel({
   }, [currentPrice, orders, fetchingPositions]);
   if (!mounted) return null;
 
-  if (!userId) return null;
-
   return (
     userId && (
       <div

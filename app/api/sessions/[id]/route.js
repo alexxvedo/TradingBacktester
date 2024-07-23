@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@/generated/clientSessions";
 import { auth, currentUser } from "@clerk/nextjs/server";
 
 const prisma = new PrismaClient();
@@ -65,6 +65,7 @@ export async function GET(req, { params }) {
       where: { id: parseInt(id) },
     });
 
+    console.log(sessionData);
     return new Response(JSON.stringify(sessionData), {
       status: 200,
       headers: {
