@@ -176,7 +176,10 @@ export default function PositionPanel({
             alt="Arrow Left"
             width={24}
             height={24}
-            onClick={() => setPanelOpen(!panelOpen)}
+            onClick={() => {
+              console.log(!panelOpen);
+              setPanelOpen(!panelOpen);
+            }}
             className="cursor-pointer"
           />
         </div>

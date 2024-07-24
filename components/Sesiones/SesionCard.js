@@ -32,7 +32,7 @@ const SesionCard = ({ sesion }) => {
           (op) => {
             currentBalance += op.profit;
             return { date: op.createdAt, balance: currentBalance };
-          }
+          },
         );
 
         setBalances(calculatedBalances);
@@ -72,7 +72,10 @@ const SesionCard = ({ sesion }) => {
     <Card className="max-w-[500px] h-full">
       <CardHeader className="flex items-center justify-between flex-row w-full gap-2">
         <div className="max-w-[55%]">
-          <h4 className="font-bold text-2xl truncate">{sesion.title}</h4>
+          <div className="flex items-center gap-2">
+            <h4 className="font-bold text-2xl truncate">{sesion.title}</h4>
+            <span className="text-default-500 ">{sesion.interval}</span>
+          </div>
           <small className="text-default-500">
             {new Date(sesion.createdAt).toLocaleString()}
           </small>

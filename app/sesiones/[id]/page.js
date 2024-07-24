@@ -47,6 +47,7 @@ export default function SessionPage() {
   const [timeframe, setTimeframe] = useState("");
 
   const [panelOpen, setPanelOpen] = useState(true);
+  const [positionCreatorOpen, setPositionCreatorOpen] = useState(true);
   const [orders, setOrders] = useState([]);
   const [isFinished, setIsFinished] = useState(false);
   const [isFullyFinished, setIsFullyFinished] = useState(false);
@@ -96,31 +97,14 @@ export default function SessionPage() {
     });
   };
 
-  /**
-   * Fetches available dates from the server and sets the state with the parsed dates.
-   *
-   * @return {Promise<void>} - A promise that resolves when the dates are fetched and the state is set.
-   * @throws {Error} - If there is an error fetching the dates, it throws an error with the message "Failed to load available dates".
-   */
-  const fetchAvailableDates = async () => {
+  const clearLocalForage = async () => {
     try {
-      // Fetch available dates from the server
-      const response = await fetch("/api/dates");
-      const dates = await response.json();
-
-      // Parse the dates and set the state with the parsed dates
-      setAvailableDates(
-        dates.map((date) => {
-          // Parse the date and convert it to a Date object
-          return new Date(date);
-        })
-      );
+      await localforage.clear();
+      console.log("LocalForage data cleared successfully");
     } catch (error) {
-      // Log an error message if there is an error fetching the dates
-      console.error("Failed to load available dates:", error);
+      console.error("Error clearing LocalForage data:", error);
     }
   };
-
   /**
    * Fetches CSV data within a specified date range from the server and updates the state.
    *
@@ -129,6 +113,8 @@ export default function SessionPage() {
    * @param {Date} options.end - The end date of the range.
    * @param {number} [options.limit] - The maximum number of data points to fetch. Defaults to undefined.
    * @param {number} [options.fetchingOffset=0] - The offset for fetching data points. Defaults to 0.
+   * @param {string} options.pair - The currency pair to fetch data for.
+   * @param {string} options.timeframe - The timeframe for the data.
    * @return {Promise<void>} - A promise that resolves when the data is fetched and the state is updated.
    * @throws {Error} - If there is an error fetching the data, it throws an error with the message "Failed to load data by date range".
    */
@@ -140,26 +126,46 @@ export default function SessionPage() {
     pair,
     timeframe,
   }) => {
-    if (limit) limit = limit + 5000;
-    try {
-      console.log(start, end);
-      const response = await fetch(
-        `/api/data?start=${start}&end=${end}&limit=${
-          limit ? limit : 5000
-        }&offset=${fetchingOffset}&pair=${pair}&interval=${timeframe}`
-      );
-      const data = await response.json();
+    const maxAttempts = 3; // Número máximo de intentos
+    let attempt = 0;
 
-      if (data.length < 5000) setIsFinished(true);
+    while (attempt < maxAttempts) {
+      try {
+        if (limit) limit += 5000;
+        else limit = 5000;
+        const response = await fetch(
+          `/api/data?start=${start}&end=${end}&limit=${limit}&offset=${fetchingOffset}&pair=${pair}&interval=${timeframe}`,
+        );
 
-      const storedData = (await localforage.getItem(`sessionData_${id}`)) || [];
-      const newData = fetchingOffset === 0 ? data : [...storedData, ...data];
-      await localforage.setItem(`sessionData_${id}`, newData);
-      setInitialData(newData);
-      setDataUpdated(false);
-      console.log(newData);
-    } catch (error) {
-      console.error("Failed to load data by date range:", error);
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+
+        const data = await response.json();
+
+        if (data.length < limit) setIsFinished(true);
+        const storedData =
+          (await localforage.getItem(`sessionData_${id}`)) || [];
+        const newData = fetchingOffset === 0 ? data : [...storedData, ...data];
+        await localforage.setItem(`sessionData_${id}`, newData);
+        setInitialData(newData);
+        setDataUpdated(false);
+        return; // Salir de la función si la solicitud fue exitosa
+      } catch (error) {
+        console.error(
+          `Failed to load data by date range (attempt ${attempt + 1}):`,
+          error,
+        );
+        attempt++;
+
+        if (attempt >= maxAttempts) {
+          throw new Error(
+            "Failed to load data by date range after multiple attempts",
+          );
+        }
+
+        await new Promise((res) => setTimeout(res, 2000)); // Esperar 2 segundos antes de reintentar
+      }
     }
   };
 
@@ -187,26 +193,6 @@ export default function SessionPage() {
     }
   };
 
-  const resetAndLoadSeries = () => {
-    if (seriesRef.current) {
-      chartRef.current.removeSeries(seriesRef.current); // Eliminar la serie actual
-      setUpdateCount(0);
-      seriesRef.current = chartRef.current.addCandlestickSeries({
-        // Crear una nueva serie
-        priceFormat: {
-          type: "price",
-          precision: 5,
-          minMove: 0.00001,
-        },
-        upColor: "#26a69a",
-        downColor: "#ef5350",
-        borderVisible: false,
-        wickUpColor: "#26a69a",
-        wickDownColor: "#ef5350",
-      });
-    }
-  };
-
   /**
    * Generates the final candles based on the given index.
    *
@@ -218,6 +204,7 @@ export default function SessionPage() {
     if (!initialData || initialData.length === 0) {
       return;
     }
+    console.log("Index: ", index);
 
     var candles = []; // Array to store the generated candles
     var candle = {}; // Object to store the current candle
@@ -248,8 +235,6 @@ export default function SessionPage() {
             ? new Date(initialData[baseIndex - 1].timestamp).getMinutes()
             : -1; // Get the previous minute of the data point
       }
-
-      console.log(currentMinute, previousMinute);
 
       // If the current minute is different from the previous minute
       if (currentMinute !== previousMinute) {
@@ -309,10 +294,13 @@ export default function SessionPage() {
     setCurrentCandle(candle);
     setCandleIndex(index);
 
+    console.log("LocalUpdateCount: ", localUpdateCount);
+
     // If all candles have been generated, set the finish modal and update the flags
-    if (localUpdateCount == initialData.length) {
+    if (localUpdateCount == initialData.length - 1) {
+      console.log("Se ha completado todo");
       setOpenFinishModal(true);
-      setUpdateCount(updateCount + 1);
+      setUpdateCount(initialData.length - 1);
       setIsFullyFinished(true);
       setIsPaused(true);
     }
@@ -331,10 +319,13 @@ export default function SessionPage() {
     if (
       !initialData ||
       initialData.length === 0 ||
-      updateCount > initialData.length
+      updateCount >= initialData.length - 1 ||
+      isFullyFinished
     ) {
       return;
     }
+
+    console.log(isFullyFinished);
 
     // Number of updates per candle
     const updatesPerCandle = 60;
@@ -343,8 +334,7 @@ export default function SessionPage() {
       return;
     }
 
-    console.log(updateCount, initialData.length);
-    if (updateCount === initialData.length && !isFullyFinished) {
+    if (updateCount === initialData.length - 1 && !isFullyFinished) {
       setOpenFinishModal(true);
       setUpdateCount(updateCount + 1);
       setIsFullyFinished(true);
@@ -377,8 +367,6 @@ export default function SessionPage() {
           : -1; // Get the previous minute of the data point
     }
 
-    console.log(currentMinute, previousMinute);
-
     if (currentMinute !== previousMinute) {
       // Ensure that the new candle starts exactly where the previous one ended
       const openPrice =
@@ -410,8 +398,8 @@ export default function SessionPage() {
       setUpdateCount(updateCount + 1);
       setAllCandles((prevCandles) =>
         prevCandles.map((candle, index) =>
-          index === prevCandles.length - 1 ? updatedCandle : candle
-        )
+          index === prevCandles.length - 1 ? updatedCandle : candle,
+        ),
       );
     }
 
@@ -426,6 +414,9 @@ export default function SessionPage() {
           start: startDate,
           end: endDate,
           fetchingOffset: offset,
+
+          pair,
+          timeframe,
         });
         setOffset(offset + 5000);
       }
@@ -482,38 +473,33 @@ export default function SessionPage() {
         const data = await res.json();
         setAccountSize(data.accountSize);
         setCurrentBalance(data.currentBalance);
-        console.log(data);
         setPair(data.currency);
         setTimeframe(data.interval);
+        setStartDate(new Date(data.startDate));
+        setEndDate(new Date(data.endDate));
+        setRecoverCandleIndex(data.currentCandleIndex);
 
         // Función para formatear el tamaño en unidades legibles
         const storedData = await localforage.getItem(`sessionData_${id}`);
-        if (storedData && storedData.length > 0) {
-          setRecoverCandleIndex(data.currentCandleIndex);
 
+        if (storedData && storedData.length > 0) {
           setInitialData(storedData);
-          if (storedData.length + 2000 >= data.currentCandleIndex) {
-            console.log(data.startDate, data.endDate);
+
+          if (data.currentCandleIndex + 2000 >= storedData.length) {
+            console.log("Voy a pedir mas data");
             fetchCSVDataByDateRange({
-              start: data.startDate,
-              end: data.endDate,
-              offset: data.currentCandleIndex,
+              start: new Date(data.startDate),
+              end: new Date(data.endDate),
+              limit: data.currentCandleIndex - storedData.length,
+              fetchingOffset: storedData.length,
               pair: data.currency,
               timeframe: data.interval,
             });
-            setStartDate(new Date(data.startDate));
-            setEndDate(new Date(data.endDate));
           }
+
           setIsLoading(false);
           setOffset(data.currentCandleIndex + 5000);
-
-          return;
-        }
-
-        if (data.startDate && data.endDate) {
-          setStartDate(new Date(data.startDate));
-          setEndDate(new Date(data.endDate));
-
+        } else if (data.startDate && data.endDate) {
           fetchCSVDataByDateRange({
             start: new Date(data.startDate),
             end: new Date(data.endDate),
@@ -523,9 +509,6 @@ export default function SessionPage() {
           });
 
           setOffset(data.currentCandleIndex + 5000);
-          setRecoverCandleIndex(data.currentCandleIndex);
-        } else {
-          setRecoverSession(false);
         }
       } else {
         console.error("Failed to fetch session data");
@@ -544,7 +527,7 @@ export default function SessionPage() {
         updateChart(); // Update the chart
       }, 1000 / candlePerSecond);
       return () => clearInterval(intervalID); // Clear the interval on cleanup
-    } else if (initialData.length != 0) {
+    } else if (initialData.length != 0 && !isFullyFinished) {
       const candles = getFinalCandles(recoverCandleIndex);
 
       for (var i = 0; i < candles.length; i++) {
@@ -573,12 +556,17 @@ export default function SessionPage() {
     updateChartTimezone();
   }, [timeZone]);
 
-  const handleResize = (sizes) => {
-    console.log(sizes[1]);
-    if (sizes[1] < 11) {
-      setPanelOpen(false);
-    } else {
-      setPanelOpen(true);
+  const handleResize = (sizes, type) => {
+    console.log(type, sizes);
+    console.log(panelOpen, positionCreatorOpen);
+
+    if (type === "vertical") {
+      if (sizes[1] < 11) {
+        setPanelOpen(false);
+      } else if (sizes[1] > 11) setPanelOpen(true);
+    } else if (type === "horizontal") {
+      if (sizes[1] < 11) setPositionCreatorOpen(false);
+      else if (sizes[1] > 11) setPositionCreatorOpen(true);
     }
   };
 
@@ -596,11 +584,11 @@ export default function SessionPage() {
         snapOffset={0}
         dragInterval={1}
         className="flex flex-col w-full h-full justify-between"
-        onDrag={(sizes) => handleResize(sizes)}
+        onDrag={(sizes) => handleResize(sizes, "vertical")}
       >
         <Split
           direction="horizontal"
-          sizes={panelOpen ? [69, 30] : [92, 7]} // Ajusta los tamaños según tu preferencia
+          sizes={positionCreatorOpen ? [69, 30] : [94, 3]} // Ajusta los tamaños según tu preferencia
           minSize={[1000, 100]} // Tamaños mínimos del gráfico y el panel
           expandToMin={false}
           gutterSize={4}
@@ -608,7 +596,7 @@ export default function SessionPage() {
           snapOffset={6}
           dragInterval={1}
           className="flex flex-row w-full h-full justify-between"
-          onDrag={(sizes) => handleResize(sizes)}
+          onDrag={(sizes) => handleResize(sizes, "horizontal")}
         >
           <div className="flex flex-col w-full h-full ">
             <ChartComponent
