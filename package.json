@@ -6,7 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "generate:historical1": "prisma generate --schema=./prisma/historical1/schema.prisma",
+    "generate:historical2": "prisma generate --schema=./prisma/historical2/schema.prisma",
+    "generate:historical3": "prisma generate --schema=./prisma/historical3/schema.prisma",
+    "generate:historical4": "prisma generate --schema=./prisma/historical4/schema.prisma",
+    "generate:sessions": "prisma generate --schema=./prisma/sessions/schema.prisma",
+    "generate:all": "npm run generate:historical1 && npm run generate:historical2 && npm run generate:historical3 && npm run generate:historical4 && npm run generate:sessions"
   },
   "dependencies": {
     "@clerk/nextjs": "^5.2.2",
