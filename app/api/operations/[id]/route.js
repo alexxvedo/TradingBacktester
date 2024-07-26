@@ -1,7 +1,5 @@
-// /api/operations/[id]/routes.js
-
 import { PrismaClient } from "@/generated/clientSessions";
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 
 const prisma = new PrismaClient();
 
@@ -19,15 +17,29 @@ export async function PUT(req, { params }) {
   }
 
   try {
-    const { exitPrice, profit, accountSize } = await req.json();
+    const { order, type } = await req.json();
 
-    const operation = await prisma.operation.update({
-      where: { id: parseInt(id) },
-      data: {
-        exitPrice,
-        profit,
-      },
-    });
+    var operation;
+
+    if (type === "update") {
+      operation = await prisma.operation.update({
+        where: { id: parseInt(id) },
+        data: {
+          tp: parseFloat(order.tp),
+          sl: parseFloat(order.sl),
+        },
+      });
+    } else if (type === "close") {
+      operation = await prisma.operation.update({
+        where: { id: parseInt(id) },
+        data: {
+          exitPrice: order.exitPrice,
+          profit: order.profit,
+          tp: parseFloat(order.tp),
+          sl: parseFloat(order.sl),
+        },
+      });
+    }
 
     // Actualizar las métricas de la sesión
     const sessionId = operation.sessionId;
@@ -39,9 +51,8 @@ export async function PUT(req, { params }) {
     const totalOperations = operations.length;
     const profitLoss = operations.reduce(
       (acc, op) => acc + (op.profit || 0),
-      0
+      0,
     );
-    const currentBalance = accountSize + profitLoss;
     const averageGain = totalOperations > 0 ? profitLoss / totalOperations : 0;
     const winRate =
       totalOperations > 0
@@ -74,7 +85,6 @@ export async function PUT(req, { params }) {
         averageGain,
         maxDrawdown,
         winRate,
-        currentBalance,
       },
     });
 
@@ -85,6 +95,7 @@ export async function PUT(req, { params }) {
       },
     });
   } catch (error) {
+    console.log(error);
     return new Response(
       JSON.stringify({ error: "Invalid token or server error" }),
       {
@@ -92,7 +103,7 @@ export async function PUT(req, { params }) {
         headers: {
           "Content-Type": "application/json",
         },
-      }
+      },
     );
   }
 }

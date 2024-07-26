@@ -1,5 +1,6 @@
-import { createChart } from "lightweight-charts";
-import { useEffect } from "react";
+import { toIterator } from "@nextui-org/system";
+import { createChart, LineStyle } from "lightweight-charts";
+import { useEffect, useState, useRef } from "react";
 
 export default function ChartComponent({
   isLoading,
@@ -11,7 +12,13 @@ export default function ChartComponent({
   markers,
   timeZone,
   theme,
+  priceLines,
+  setPriceLines,
+  orders,
+  setOrders,
 }) {
+  const [dragging, setDragging] = useState({ isDragging: false, index: null });
+
   /**
    * Updates the colors of the chart to match the current theme.
    */
@@ -52,6 +59,7 @@ export default function ChartComponent({
       });
     }
   };
+
   /**
    * Updates the line series with the markers sorted by time.
    * The line series is updated with the sorted markers data.
@@ -73,7 +81,7 @@ export default function ChartComponent({
         sortedMarkers.map((marker) => ({
           time: marker.time,
           value: marker.value,
-        }))
+        })),
       );
       // Set the markers for the line series with the sorted markers data
       lineSeries.setMarkers(
@@ -86,7 +94,7 @@ export default function ChartComponent({
             marker.type === "buy"
               ? "Buy " + marker.size + " @ " + marker.value
               : "Sell " + marker.size + " @ " + marker.value,
-        }))
+        })),
       );
     }
   }, [markers, lineSeries]); // Only update when markers or lineSeries change
@@ -150,6 +158,8 @@ export default function ChartComponent({
         },
       });
 
+      chartRef.current = chart;
+
       // Create the candlestick series
       seriesRef.current = chart.addCandlestickSeries({
         // Set the price format for the series
@@ -179,16 +189,109 @@ export default function ChartComponent({
           lastValueVisible: false,
           // Set the price line to be visible
           priceLineVisible: false,
-        })
+        }),
       );
-
-      // Set the chart to the chart ref
-      chartRef.current = chart;
     } else {
       // Update the chart colors if the theme changes
       updateChartColors();
     }
   }, [theme, timeZone]);
+
+  const handleMouseMove = (event) => {
+    if (!dragging.isDragging || dragging.index === null) return;
+
+    const rect = chartContainerRef.current.getBoundingClientRect();
+    const price = seriesRef.current.coordinateToPrice(event.clientY - rect.top);
+
+    const updatedPriceLines = [...priceLines];
+    updatedPriceLines[dragging.index].applyOptions({
+      price,
+      title:
+        updatedPriceLines[dragging.index].options().lineType === "tp"
+          ? "TP @ " + price.toFixed(5)
+          : "SL @ " + price.toFixed(5),
+    });
+
+    setPriceLines(updatedPriceLines);
+  };
+
+  const handleMouseDown = (event) => {
+    const rect = chartContainerRef.current.getBoundingClientRect();
+    const price = seriesRef.current.coordinateToPrice(event.clientY - rect.top);
+
+    priceLines.forEach((priceLine, index) => {
+      const priceLinePrice = parseFloat(priceLine.options().price.toFixed(5));
+      const roundedPrice = parseFloat(price.toFixed(5));
+      const isPriceLineDrawable = priceLine.options().draggable;
+
+      if (
+        Math.abs(roundedPrice - priceLinePrice) < 0.0001 &&
+        isPriceLineDrawable
+      ) {
+        // Ajusta la tolerancia si es necesario
+        setDragging({ isDragging: true, index });
+        chartRef.current.applyOptions({
+          handleScroll: false,
+          handleScale: false,
+        });
+      }
+    });
+  };
+
+  const handleMouseUp = () => {
+    if (dragging.index !== null) {
+      const updatedPriceLines = [...priceLines];
+      const priceLine = updatedPriceLines[dragging.index];
+      const price = priceLine.options().price;
+
+      const updatedOrders = orders.map((order) => {
+        if (order.id === priceLine.options().positionId) {
+          if (priceLine.options().lineType === "tp") {
+            const updatedOrder = {
+              ...order,
+              tp: price.toFixed(5),
+            };
+            return updatedOrder;
+          } else if (priceLine.options().lineType === "sl") {
+            return {
+              ...order,
+              sl: price.toFixed(5),
+            };
+          }
+        }
+        return order;
+      });
+
+      setOrders(updatedOrders);
+    }
+
+    setDragging({ isDragging: false, index: null });
+    chartRef.current.applyOptions({
+      handleScroll: true,
+      handleScale: true,
+    });
+  };
+
+  useEffect(() => {
+    if (chartContainerRef.current) {
+      chartContainerRef.current.addEventListener("mousemove", handleMouseMove);
+      chartContainerRef.current.addEventListener("mousedown", handleMouseDown);
+      chartContainerRef.current.addEventListener("mouseup", handleMouseUp);
+
+      return () => {
+        chartContainerRef.current.removeEventListener(
+          "mousemove",
+          handleMouseMove,
+        );
+        chartContainerRef.current.removeEventListener(
+          "mousedown",
+          handleMouseDown,
+        );
+        chartContainerRef.current.removeEventListener("mouseup", handleMouseUp);
+      };
+    }
+  }, [priceLines, dragging]);
+
   return (
     <div
       className="min-w-[80%] min-h-[90%] max-h-full rounded-lg w-full h-[80vh]"

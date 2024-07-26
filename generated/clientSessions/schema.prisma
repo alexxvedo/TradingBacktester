@@ -35,11 +35,14 @@ model session {
 model operation {
   id         Int      @id @default(autoincrement())
   sessionId  Int
-  type       String
-  size       Int
+  type       String // buy or sell
+  orderType  String // market or limit
+  size       Float
   entryPrice Float
   exitPrice  Float?
   profit     Float?
+  tp         Float?
+  sl         Float?
   createdAt  DateTime @default(now())
 
   session session @relation(fields: [sessionId], references: [id])

@@ -222,8 +222,8 @@ export namespace Prisma {
   export import Exact = $Public.Exact
 
   /**
-   * Prisma Client JS version: 5.16.1
-   * Query Engine version: 34ace0eb2704183d2c05b60b52fba5c43c13f303
+   * Prisma Client JS version: 5.17.0
+   * Query Engine version: 393aa359c9ad4a4bb28630fb5613f9c281cde053
    */
   export type PrismaVersion = {
     client: string
@@ -2126,6 +2126,8 @@ export namespace Prisma {
     entryPrice: number | null
     exitPrice: number | null
     profit: number | null
+    tp: number | null
+    sl: number | null
   }
 
   export type OperationSumAggregateOutputType = {
@@ -2135,16 +2137,21 @@ export namespace Prisma {
     entryPrice: number | null
     exitPrice: number | null
     profit: number | null
+    tp: number | null
+    sl: number | null
   }
 
   export type OperationMinAggregateOutputType = {
     id: number | null
     sessionId: number | null
     type: string | null
+    orderType: string | null
     size: number | null
     entryPrice: number | null
     exitPrice: number | null
     profit: number | null
+    tp: number | null
+    sl: number | null
     createdAt: Date | null
   }
 
@@ -2152,10 +2159,13 @@ export namespace Prisma {
     id: number | null
     sessionId: number | null
     type: string | null
+    orderType: string | null
     size: number | null
     entryPrice: number | null
     exitPrice: number | null
     profit: number | null
+    tp: number | null
+    sl: number | null
     createdAt: Date | null
   }
 
@@ -2163,10 +2173,13 @@ export namespace Prisma {
     id: number
     sessionId: number
     type: number
+    orderType: number
     size: number
     entryPrice: number
     exitPrice: number
     profit: number
+    tp: number
+    sl: number
     createdAt: number
     _all: number
   }
@@ -2179,6 +2192,8 @@ export namespace Prisma {
     entryPrice?: true
     exitPrice?: true
     profit?: true
+    tp?: true
+    sl?: true
   }
 
   export type OperationSumAggregateInputType = {
@@ -2188,16 +2203,21 @@ export namespace Prisma {
     entryPrice?: true
     exitPrice?: true
     profit?: true
+    tp?: true
+    sl?: true
   }
 
   export type OperationMinAggregateInputType = {
     id?: true
     sessionId?: true
     type?: true
+    orderType?: true
     size?: true
     entryPrice?: true
     exitPrice?: true
     profit?: true
+    tp?: true
+    sl?: true
     createdAt?: true
   }
 
@@ -2205,10 +2225,13 @@ export namespace Prisma {
     id?: true
     sessionId?: true
     type?: true
+    orderType?: true
     size?: true
     entryPrice?: true
     exitPrice?: true
     profit?: true
+    tp?: true
+    sl?: true
     createdAt?: true
   }
 
@@ -2216,10 +2239,13 @@ export namespace Prisma {
     id?: true
     sessionId?: true
     type?: true
+    orderType?: true
     size?: true
     entryPrice?: true
     exitPrice?: true
     profit?: true
+    tp?: true
+    sl?: true
     createdAt?: true
     _all?: true
   }
@@ -2314,10 +2340,13 @@ export namespace Prisma {
     id: number
     sessionId: number
     type: string
+    orderType: string
     size: number
     entryPrice: number
     exitPrice: number | null
     profit: number | null
+    tp: number | null
+    sl: number | null
     createdAt: Date
     _count: OperationCountAggregateOutputType | null
     _avg: OperationAvgAggregateOutputType | null
@@ -2344,10 +2373,13 @@ export namespace Prisma {
     id?: boolean
     sessionId?: boolean
     type?: boolean
+    orderType?: boolean
     size?: boolean
     entryPrice?: boolean
     exitPrice?: boolean
     profit?: boolean
+    tp?: boolean
+    sl?: boolean
     createdAt?: boolean
     session?: boolean | sessionDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["operation"]>
@@ -2357,10 +2389,13 @@ export namespace Prisma {
     id?: boolean
     sessionId?: boolean
     type?: boolean
+    orderType?: boolean
     size?: boolean
     entryPrice?: boolean
     exitPrice?: boolean
     profit?: boolean
+    tp?: boolean
+    sl?: boolean
     createdAt?: boolean
   }
 
@@ -2377,10 +2412,13 @@ export namespace Prisma {
       id: number
       sessionId: number
       type: string
+      orderType: string
       size: number
       entryPrice: number
       exitPrice: number | null
       profit: number | null
+      tp: number | null
+      sl: number | null
       createdAt: Date
     }, ExtArgs["result"]["operation"]>
     composites: {}
@@ -2755,10 +2793,13 @@ export namespace Prisma {
     readonly id: FieldRef<"operation", 'Int'>
     readonly sessionId: FieldRef<"operation", 'Int'>
     readonly type: FieldRef<"operation", 'String'>
-    readonly size: FieldRef<"operation", 'Int'>
+    readonly orderType: FieldRef<"operation", 'String'>
+    readonly size: FieldRef<"operation", 'Float'>
     readonly entryPrice: FieldRef<"operation", 'Float'>
     readonly exitPrice: FieldRef<"operation", 'Float'>
     readonly profit: FieldRef<"operation", 'Float'>
+    readonly tp: FieldRef<"operation", 'Float'>
+    readonly sl: FieldRef<"operation", 'Float'>
     readonly createdAt: FieldRef<"operation", 'DateTime'>
   }
     
@@ -3116,10 +3157,13 @@ export namespace Prisma {
     id: 'id',
     sessionId: 'sessionId',
     type: 'type',
+    orderType: 'orderType',
     size: 'size',
     entryPrice: 'entryPrice',
     exitPrice: 'exitPrice',
     profit: 'profit',
+    tp: 'tp',
+    sl: 'sl',
     createdAt: 'createdAt'
   };
 
@@ -3312,10 +3356,13 @@ export namespace Prisma {
     id?: IntFilter<"operation"> | number
     sessionId?: IntFilter<"operation"> | number
     type?: StringFilter<"operation"> | string
-    size?: IntFilter<"operation"> | number
+    orderType?: StringFilter<"operation"> | string
+    size?: FloatFilter<"operation"> | number
     entryPrice?: FloatFilter<"operation"> | number
     exitPrice?: FloatNullableFilter<"operation"> | number | null
     profit?: FloatNullableFilter<"operation"> | number | null
+    tp?: FloatNullableFilter<"operation"> | number | null
+    sl?: FloatNullableFilter<"operation"> | number | null
     createdAt?: DateTimeFilter<"operation"> | Date | string
     session?: XOR<SessionRelationFilter, sessionWhereInput>
   }
@@ -3324,10 +3371,13 @@ export namespace Prisma {
     id?: SortOrder
     sessionId?: SortOrder
     type?: SortOrder
+    orderType?: SortOrder
     size?: SortOrder
     entryPrice?: SortOrder
     exitPrice?: SortOrderInput | SortOrder
     profit?: SortOrderInput | SortOrder
+    tp?: SortOrderInput | SortOrder
+    sl?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     session?: sessionOrderByWithRelationInput
   }
@@ -3339,10 +3389,13 @@ export namespace Prisma {
     NOT?: operationWhereInput | operationWhereInput[]
     sessionId?: IntFilter<"operation"> | number
     type?: StringFilter<"operation"> | string
-    size?: IntFilter<"operation"> | number
+    orderType?: StringFilter<"operation"> | string
+    size?: FloatFilter<"operation"> | number
     entryPrice?: FloatFilter<"operation"> | number
     exitPrice?: FloatNullableFilter<"operation"> | number | null
     profit?: FloatNullableFilter<"operation"> | number | null
+    tp?: FloatNullableFilter<"operation"> | number | null
+    sl?: FloatNullableFilter<"operation"> | number | null
     createdAt?: DateTimeFilter<"operation"> | Date | string
     session?: XOR<SessionRelationFilter, sessionWhereInput>
   }, "id">
@@ -3351,10 +3404,13 @@ export namespace Prisma {
     id?: SortOrder
     sessionId?: SortOrder
     type?: SortOrder
+    orderType?: SortOrder
     size?: SortOrder
     entryPrice?: SortOrder
     exitPrice?: SortOrderInput | SortOrder
     profit?: SortOrderInput | SortOrder
+    tp?: SortOrderInput | SortOrder
+    sl?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     _count?: operationCountOrderByAggregateInput
     _avg?: operationAvgOrderByAggregateInput
@@ -3370,10 +3426,13 @@ export namespace Prisma {
     id?: IntWithAggregatesFilter<"operation"> | number
     sessionId?: IntWithAggregatesFilter<"operation"> | number
     type?: StringWithAggregatesFilter<"operation"> | string
-    size?: IntWithAggregatesFilter<"operation"> | number
+    orderType?: StringWithAggregatesFilter<"operation"> | string
+    size?: FloatWithAggregatesFilter<"operation"> | number
     entryPrice?: FloatWithAggregatesFilter<"operation"> | number
     exitPrice?: FloatNullableWithAggregatesFilter<"operation"> | number | null
     profit?: FloatNullableWithAggregatesFilter<"operation"> | number | null
+    tp?: FloatNullableWithAggregatesFilter<"operation"> | number | null
+    sl?: FloatNullableWithAggregatesFilter<"operation"> | number | null
     createdAt?: DateTimeWithAggregatesFilter<"operation"> | Date | string
   }
 
@@ -3534,10 +3593,13 @@ export namespace Prisma {
 
   export type operationCreateInput = {
     type: string
+    orderType: string
     size: number
     entryPrice: number
     exitPrice?: number | null
     profit?: number | null
+    tp?: number | null
+    sl?: number | null
     createdAt?: Date | string
     session: sessionCreateNestedOneWithoutOperationsInput
   }
@@ -3546,19 +3608,25 @@ export namespace Prisma {
     id?: number
     sessionId: number
     type: string
+    orderType: string
     size: number
     entryPrice: number
     exitPrice?: number | null
     profit?: number | null
+    tp?: number | null
+    sl?: number | null
     createdAt?: Date | string
   }
 
   export type operationUpdateInput = {
     type?: StringFieldUpdateOperationsInput | string
-    size?: IntFieldUpdateOperationsInput | number
+    orderType?: StringFieldUpdateOperationsInput | string
+    size?: FloatFieldUpdateOperationsInput | number
     entryPrice?: FloatFieldUpdateOperationsInput | number
     exitPrice?: NullableFloatFieldUpdateOperationsInput | number | null
     profit?: NullableFloatFieldUpdateOperationsInput | number | null
+    tp?: NullableFloatFieldUpdateOperationsInput | number | null
+    sl?: NullableFloatFieldUpdateOperationsInput | number | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     session?: sessionUpdateOneRequiredWithoutOperationsNestedInput
   }
@@ -3567,10 +3635,13 @@ export namespace Prisma {
     id?: IntFieldUpdateOperationsInput | number
     sessionId?: IntFieldUpdateOperationsInput | number
     type?: StringFieldUpdateOperationsInput | string
-    size?: IntFieldUpdateOperationsInput | number
+    orderType?: StringFieldUpdateOperationsInput | string
+    size?: FloatFieldUpdateOperationsInput | number
     entryPrice?: FloatFieldUpdateOperationsInput | number
     exitPrice?: NullableFloatFieldUpdateOperationsInput | number | null
     profit?: NullableFloatFieldUpdateOperationsInput | number | null
+    tp?: NullableFloatFieldUpdateOperationsInput | number | null
+    sl?: NullableFloatFieldUpdateOperationsInput | number | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -3578,19 +3649,25 @@ export namespace Prisma {
     id?: number
     sessionId: number
     type: string
+    orderType: string
     size: number
     entryPrice: number
     exitPrice?: number | null
     profit?: number | null
+    tp?: number | null
+    sl?: number | null
     createdAt?: Date | string
   }
 
   export type operationUpdateManyMutationInput = {
     type?: StringFieldUpdateOperationsInput | string
-    size?: IntFieldUpdateOperationsInput | number
+    orderType?: StringFieldUpdateOperationsInput | string
+    size?: FloatFieldUpdateOperationsInput | number
     entryPrice?: FloatFieldUpdateOperationsInput | number
     exitPrice?: NullableFloatFieldUpdateOperationsInput | number | null
     profit?: NullableFloatFieldUpdateOperationsInput | number | null
+    tp?: NullableFloatFieldUpdateOperationsInput | number | null
+    sl?: NullableFloatFieldUpdateOperationsInput | number | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -3598,10 +3675,13 @@ export namespace Prisma {
     id?: IntFieldUpdateOperationsInput | number
     sessionId?: IntFieldUpdateOperationsInput | number
     type?: StringFieldUpdateOperationsInput | string
-    size?: IntFieldUpdateOperationsInput | number
+    orderType?: StringFieldUpdateOperationsInput | string
+    size?: FloatFieldUpdateOperationsInput | number
     entryPrice?: FloatFieldUpdateOperationsInput | number
     exitPrice?: NullableFloatFieldUpdateOperationsInput | number | null
     profit?: NullableFloatFieldUpdateOperationsInput | number | null
+    tp?: NullableFloatFieldUpdateOperationsInput | number | null
+    sl?: NullableFloatFieldUpdateOperationsInput | number | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -3865,10 +3945,13 @@ export namespace Prisma {
     id?: SortOrder
     sessionId?: SortOrder
     type?: SortOrder
+    orderType?: SortOrder
     size?: SortOrder
     entryPrice?: SortOrder
     exitPrice?: SortOrder
     profit?: SortOrder
+    tp?: SortOrder
+    sl?: SortOrder
     createdAt?: SortOrder
   }
 
@@ -3879,16 +3962,21 @@ export namespace Prisma {
     entryPrice?: SortOrder
     exitPrice?: SortOrder
     profit?: SortOrder
+    tp?: SortOrder
+    sl?: SortOrder
   }
 
   export type operationMaxOrderByAggregateInput = {
     id?: SortOrder
     sessionId?: SortOrder
     type?: SortOrder
+    orderType?: SortOrder
     size?: SortOrder
     entryPrice?: SortOrder
     exitPrice?: SortOrder
     profit?: SortOrder
+    tp?: SortOrder
+    sl?: SortOrder
     createdAt?: SortOrder
   }
 
@@ -3896,10 +3984,13 @@ export namespace Prisma {
     id?: SortOrder
     sessionId?: SortOrder
     type?: SortOrder
+    orderType?: SortOrder
     size?: SortOrder
     entryPrice?: SortOrder
     exitPrice?: SortOrder
     profit?: SortOrder
+    tp?: SortOrder
+    sl?: SortOrder
     createdAt?: SortOrder
   }
 
@@ -3910,6 +4001,8 @@ export namespace Prisma {
     entryPrice?: SortOrder
     exitPrice?: SortOrder
     profit?: SortOrder
+    tp?: SortOrder
+    sl?: SortOrder
   }
 
   export type FloatNullableWithAggregatesFilter<$PrismaModel = never> = {
@@ -4195,20 +4288,26 @@ export namespace Prisma {
 
   export type operationCreateWithoutSessionInput = {
     type: string
+    orderType: string
     size: number
     entryPrice: number
     exitPrice?: number | null
     profit?: number | null
+    tp?: number | null
+    sl?: number | null
     createdAt?: Date | string
   }
 
   export type operationUncheckedCreateWithoutSessionInput = {
     id?: number
     type: string
+    orderType: string
     size: number
     entryPrice: number
     exitPrice?: number | null
     profit?: number | null
+    tp?: number | null
+    sl?: number | null
     createdAt?: Date | string
   }
 
@@ -4245,10 +4344,13 @@ export namespace Prisma {
     id?: IntFilter<"operation"> | number
     sessionId?: IntFilter<"operation"> | number
     type?: StringFilter<"operation"> | string
-    size?: IntFilter<"operation"> | number
+    orderType?: StringFilter<"operation"> | string
+    size?: FloatFilter<"operation"> | number
     entryPrice?: FloatFilter<"operation"> | number
     exitPrice?: FloatNullableFilter<"operation"> | number | null
     profit?: FloatNullableFilter<"operation"> | number | null
+    tp?: FloatNullableFilter<"operation"> | number | null
+    sl?: FloatNullableFilter<"operation"> | number | null
     createdAt?: DateTimeFilter<"operation"> | Date | string
   }
 
@@ -4357,39 +4459,51 @@ export namespace Prisma {
   export type operationCreateManySessionInput = {
     id?: number
     type: string
+    orderType: string
     size: number
     entryPrice: number
     exitPrice?: number | null
     profit?: number | null
+    tp?: number | null
+    sl?: number | null
     createdAt?: Date | string
   }
 
   export type operationUpdateWithoutSessionInput = {
     type?: StringFieldUpdateOperationsInput | string
-    size?: IntFieldUpdateOperationsInput | number
+    orderType?: StringFieldUpdateOperationsInput | string
+    size?: FloatFieldUpdateOperationsInput | number
     entryPrice?: FloatFieldUpdateOperationsInput | number
     exitPrice?: NullableFloatFieldUpdateOperationsInput | number | null
     profit?: NullableFloatFieldUpdateOperationsInput | number | null
+    tp?: NullableFloatFieldUpdateOperationsInput | number | null
+    sl?: NullableFloatFieldUpdateOperationsInput | number | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type operationUncheckedUpdateWithoutSessionInput = {
     id?: IntFieldUpdateOperationsInput | number
     type?: StringFieldUpdateOperationsInput | string
-    size?: IntFieldUpdateOperationsInput | number
+    orderType?: StringFieldUpdateOperationsInput | string
+    size?: FloatFieldUpdateOperationsInput | number
     entryPrice?: FloatFieldUpdateOperationsInput | number
     exitPrice?: NullableFloatFieldUpdateOperationsInput | number | null
     profit?: NullableFloatFieldUpdateOperationsInput | number | null
+    tp?: NullableFloatFieldUpdateOperationsInput | number | null
+    sl?: NullableFloatFieldUpdateOperationsInput | number | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type operationUncheckedUpdateManyWithoutSessionInput = {
     id?: IntFieldUpdateOperationsInput | number
     type?: StringFieldUpdateOperationsInput | string
-    size?: IntFieldUpdateOperationsInput | number
+    orderType?: StringFieldUpdateOperationsInput | string
+    size?: FloatFieldUpdateOperationsInput | number
     entryPrice?: FloatFieldUpdateOperationsInput | number
     exitPrice?: NullableFloatFieldUpdateOperationsInput | number | null
     profit?: NullableFloatFieldUpdateOperationsInput | number | null
+    tp?: NullableFloatFieldUpdateOperationsInput | number | null
+    sl?: NullableFloatFieldUpdateOperationsInput | number | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 

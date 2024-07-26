@@ -55,6 +55,7 @@ export default function SessionPage() {
   const [isLoading, setIsLoading] = useState(false); // Estado para controlar la carga de datos
   const [markers, setMarkers] = useState([]);
   const [lineSeries, setLineSeries] = useState(null);
+  const [priceLines, setPriceLines] = useState([]);
 
   const { theme, setTheme } = useTheme();
   const [timeZone, setTimeZone] = useState("Europe/London"); // GMT+0 por defecto
@@ -100,11 +101,11 @@ export default function SessionPage() {
   const clearLocalForage = async () => {
     try {
       await localforage.clear();
-      console.log("LocalForage data cleared successfully");
     } catch (error) {
       console.error("Error clearing LocalForage data:", error);
     }
   };
+
   /**
    * Fetches CSV data within a specified date range from the server and updates the state.
    *
@@ -204,7 +205,6 @@ export default function SessionPage() {
     if (!initialData || initialData.length === 0) {
       return;
     }
-    console.log("Index: ", index);
 
     var candles = []; // Array to store the generated candles
     var candle = {}; // Object to store the current candle
@@ -294,11 +294,8 @@ export default function SessionPage() {
     setCurrentCandle(candle);
     setCandleIndex(index);
 
-    console.log("LocalUpdateCount: ", localUpdateCount);
-
     // If all candles have been generated, set the finish modal and update the flags
     if (localUpdateCount == initialData.length - 1) {
-      console.log("Se ha completado todo");
       setOpenFinishModal(true);
       setUpdateCount(initialData.length - 1);
       setIsFullyFinished(true);
@@ -324,8 +321,6 @@ export default function SessionPage() {
     ) {
       return;
     }
-
-    console.log(isFullyFinished);
 
     // Number of updates per candle
     const updatesPerCandle = 60;
@@ -486,7 +481,6 @@ export default function SessionPage() {
           setInitialData(storedData);
 
           if (data.currentCandleIndex + 2000 >= storedData.length) {
-            console.log("Voy a pedir mas data");
             fetchCSVDataByDateRange({
               start: new Date(data.startDate),
               end: new Date(data.endDate),
@@ -557,9 +551,6 @@ export default function SessionPage() {
   }, [timeZone]);
 
   const handleResize = (sizes, type) => {
-    console.log(type, sizes);
-    console.log(panelOpen, positionCreatorOpen);
-
     if (type === "vertical") {
       if (sizes[1] < 11) {
         setPanelOpen(false);
@@ -572,6 +563,70 @@ export default function SessionPage() {
 
   const togglePause = () => setIsPaused(!isPaused);
 
+  const addPriceLines = (order) => {
+    const price = parseFloat(order.entryPrice);
+    const color = "rgba(0, 0, 255, 0.5)";
+    const tpColor = "rgba(22, 150, 138, 0.5)";
+    const slColor = "rgba(223, 67, 64, 0.5)";
+    const entryPriceLine = {
+      positionId: order.id,
+
+      price: price,
+      color: color,
+      ineWidth: 2,
+      lineStyle: 2, // LineStyle.Dashed
+      axisLabelVisible: true,
+      title:
+        order.type === "buy"
+          ? "Buy " +
+            order.size / 10000 +
+            " " +
+            order.orderType.toUpperCase() +
+            " @ " +
+            order.entryPrice
+          : "Sell " +
+            order.size / 100000 +
+            " " +
+            order.orderType.toUpperCase() +
+            " @ " +
+            order.entryPrice,
+      lineType: "priceLine",
+      draggable: false,
+    };
+
+    const tpLine = {
+      positionId: order.id,
+
+      price: parseFloat(order.tp),
+      color: tpColor,
+      lineWidth: 2,
+      lineStyle: 2,
+      axisLabelVisible: true,
+      title: "TP @ " + order.tp,
+      lineType: "tp",
+      draggable: true,
+    };
+    const slLine = {
+      positionId: order.id,
+
+      price: parseFloat(order.sl),
+      color: slColor,
+      lineWidth: 2,
+      lineStyle: 2,
+      axisLabelVisible: true,
+      title: "SL @ " + order.sl,
+      lineType: "sl",
+      draggable: true,
+    };
+
+    console.log(entryPriceLine, tpLine, slLine);
+
+    const finalPriceLine = lineSeries.createPriceLine(entryPriceLine);
+    const finalTpLine = lineSeries.createPriceLine(tpLine);
+    const finalSlLine = lineSeries.createPriceLine(slLine);
+
+    setPriceLines([...priceLines, finalPriceLine, finalTpLine, finalSlLine]);
+  };
   return (
     <div className="flex flex-col min-h-[100%] min-w-full p-4 border-2 rounded-lg">
       <Split
@@ -609,6 +664,10 @@ export default function SessionPage() {
               markers={markers}
               timeZone={timeZone}
               theme={theme}
+              priceLines={priceLines}
+              setPriceLines={setPriceLines}
+              orders={orders}
+              setOrders={setOrders}
             />
             <ChartPlayer
               isPaused={isPaused}
@@ -633,6 +692,7 @@ export default function SessionPage() {
               markers={markers}
               setMarkers={setMarkers}
               currentCandleDate={currentCandle.time}
+              addPriceLines={addPriceLines}
             />
           </div>
         </Split>
@@ -647,6 +707,10 @@ export default function SessionPage() {
             setOrders={setOrders}
             saveSessionData={saveSessionData}
             accountSize={accountSize}
+            lineSeries={lineSeries}
+            priceLines={priceLines}
+            setPriceLines={setPriceLines}
+            addPriceLines={addPriceLines}
           />
         </div>
       </Split>

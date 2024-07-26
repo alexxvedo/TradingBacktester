@@ -16,19 +16,19 @@ export async function POST(req) {
   }
 
   try {
-    const { sessionId, type, size, entryPrice } = await req.json();
-    console.log({
-      sessionId: parseInt(sessionId),
-      type,
-      size,
-      entryPrice: entryPrice,
-    });
+    const { sessionId, type, size, entryPrice, tp, sl, orderType } =
+      await req.json();
+
     const operation = await prisma.operation.create({
       data: {
         sessionId: parseInt(sessionId),
         type,
         size,
         entryPrice: entryPrice,
+        sl: sl ? parseFloat(sl) : null,
+
+        tp: tp ? parseFloat(tp) : null,
+        orderType: orderType,
       },
     });
 
@@ -39,7 +39,7 @@ export async function POST(req) {
       },
     });
   } catch (error) {
-    console.log("Invalid token or server error");
+    console.log("Invalid token or server error", error);
     return new Response(
       JSON.stringify({ error: "Invalid token or server error" }),
       {
@@ -47,7 +47,7 @@ export async function POST(req) {
         headers: {
           "Content-Type": "application/json",
         },
-      }
+      },
     );
   }
 }
@@ -73,6 +73,7 @@ export async function GET(req) {
       where: { sessionId: parseInt(sessionId) },
     });
 
+    console.log(operations);
     return new Response(JSON.stringify(operations), {
       status: 200,
       headers: {
@@ -88,7 +89,7 @@ export async function GET(req) {
         headers: {
           "Content-Type": "application/json",
         },
-      }
+      },
     );
   }
 }

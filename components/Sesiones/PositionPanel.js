@@ -20,6 +20,10 @@ export default function PositionPanel({
   setOrders,
   saveSessionData,
   accountSize,
+  lineSeries,
+  priceLines,
+  setPriceLines,
+  addPriceLines,
 }) {
   const [history, setHistory] = useState([]);
   const [fetchingPositions, setFetchingPositions] = useState(true);
@@ -32,49 +36,55 @@ export default function PositionPanel({
     setMounted(true);
   }, []);
   useEffect(() => {
-    const fetchPositionHistory = async () => {
-      try {
-        const res = await fetch(`/api/operations?sessionId=${sessionId}`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-        const data = await res.json();
+    if (lineSeries !== null) {
+      const fetchPositionHistory = async () => {
+        try {
+          const res = await fetch(`/api/operations?sessionId=${sessionId}`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+          const data = await res.json();
 
-        var historyPositions = [];
-        var currentPositions = [];
-        data.map((position) => {
-          if (position.exitPrice) {
-            historyPositions.push({
-              id: position.id,
-              type: position.type,
-              size: position.size,
-              entryPrice: position.entryPrice,
-              exitPrice: position.exitPrice,
-              profit: position.profit,
-              createdAt: position.createdAt,
-            });
-          } else {
-            currentPositions.push({
-              id: position.id,
-              type: position.type,
-              size: position.size,
-              entryPrice: position.entryPrice,
-              profit: "0",
-            });
-          }
-        });
-        setHistory(historyPositions);
+          var historyPositions = [];
+          var currentPositions = [];
+          data.map((position) => {
+            if (position.exitPrice) {
+              historyPositions.push({
+                id: position.id,
+                type: position.type,
+                size: position.size,
+                entryPrice: position.entryPrice,
+                exitPrice: position.exitPrice,
+                profit: position.profit,
+                createdAt: position.createdAt,
+              });
+            } else {
+              currentPositions.push({
+                id: position.id,
+                type: position.type,
+                size: position.size,
+                entryPrice: position.entryPrice,
+                profit: position.profit,
+                tp: position.tp,
+                sl: position.sl,
+              });
+              console.log("Anadiendo priceLine");
+              addPriceLines(position);
+            }
+          });
+          setHistory(historyPositions);
 
-        setOrders(currentPositions);
-        setFetchingPositions(false);
-      } catch (error) {
-        console.error("Error fetching orders:", error);
-      }
-    };
-    fetchPositionHistory();
-  }, [sessionId]);
+          setOrders(currentPositions);
+          setFetchingPositions(false);
+        } catch (error) {
+          console.error("Error fetching orders:", error);
+        }
+      };
+      fetchPositionHistory();
+    }
+  }, [sessionId, lineSeries]);
 
   useEffect(() => {
     if (!fetchingPositions) {
@@ -128,6 +138,9 @@ export default function PositionPanel({
                       saveSessionData={saveSessionData}
                       isHistory={false}
                       accountSize={accountSize}
+                      lineSeries={lineSeries}
+                      priceLines={priceLines}
+                      setPriceLines={setPriceLines}
                     />
                   ) : (
                     <div
@@ -177,7 +190,6 @@ export default function PositionPanel({
             width={24}
             height={24}
             onClick={() => {
-              console.log(!panelOpen);
               setPanelOpen(!panelOpen);
             }}
             className="cursor-pointer"

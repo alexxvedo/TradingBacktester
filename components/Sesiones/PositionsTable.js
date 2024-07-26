@@ -6,8 +6,10 @@ import {
   TableBody,
   TableCell,
 } from "@nextui-org/table";
-
 import { Button } from "@nextui-org/button";
+import { Input } from "@nextui-org/input";
+import { useState } from "react";
+import { PencilIcon } from "@heroicons/react/24/solid";
 
 export default function PositionsTable({
   orders,
@@ -17,7 +19,12 @@ export default function PositionsTable({
   currentPrice,
   saveSessionData,
   accountSize,
+  lineSeries,
+  priceLines,
+  setPriceLines,
 }) {
+  const [editingOrder, setEditingOrder] = useState(null);
+
   const closePosition = (key) => async () => {
     const order = orders.find((order) => order.id === key);
 
@@ -38,9 +45,15 @@ export default function PositionsTable({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          exitPrice: newOrder.exitPrice,
-          profit: newOrder.profit,
-          accountSize,
+          order: {
+            ...newOrder,
+            exitPrice: newOrder.exitPrice,
+            profit: newOrder.profit,
+            accountSize,
+            takeProfit: order.takeProfit,
+            stopLoss: order.stopLoss,
+          },
+          type: "close",
         }),
       });
 
@@ -48,17 +61,93 @@ export default function PositionsTable({
         setOrders([...orders.filter((order) => order.id !== key)]);
         setHistory([...history, newOrder]);
         saveSessionData();
+        priceLines.map((priceLine) => {
+          console.log(priceLine);
+          if (
+            priceLine._private__priceLine._private__options.positionId === key
+          ) {
+            console.log("Removing price line");
+            console.log(lineSeries);
+            lineSeries.removePriceLine(priceLine);
+          }
+        });
       } else {
-        setOrders([...orders, order]);
         console.error("Failed to close operation");
       }
     } catch (error) {
-      setOrders([...orders, order]);
-      setHistory([...history.filter((order) => order.id !== key)]);
-
       console.error("Error closing operation:", error);
     }
   };
+
+  const handleEdit = (order) => () => {
+    setEditingOrder(order.id);
+  };
+
+  const handleSave = async (order) => {
+    try {
+      const res = await fetch(`/api/operations/${order.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ order: order, type: "update" }),
+      });
+
+      if (res.ok) {
+        const updatedOrders = orders.map((o) =>
+          o.id === order.id ? order : o,
+        );
+        setOrders(updatedOrders);
+        setEditingOrder(null);
+        saveSessionData();
+      } else {
+        console.error("Failed to update operation");
+      }
+    } catch (error) {
+      console.error("Error updating operation:", error);
+    }
+  };
+
+  const handleChange = (orderId, field) => (e) => {
+    const value = e.target.value;
+    const updatedOrders = orders.map((order) =>
+      order.id === orderId ? { ...order, [field]: value } : order,
+    );
+    setOrders(updatedOrders);
+  };
+
+  const updatePriceLine = (order, lineType) => {
+    const orderId = order.id;
+    priceLines.map((priceLine) => {
+      if (
+        priceLine._private__priceLine._private__options.positionId ===
+          orderId &&
+        priceLine._private__priceLine._private__options.lineType === lineType
+      ) {
+        var newPriceLine = {
+          ...priceLine._private__priceLine._private__options,
+          price:
+            lineType === "tp" ? parseFloat(order.tp) : parseFloat(order.sl),
+          title: lineType === "tp" ? "TP @ " + order.tp : "SL @ " + order.sl,
+        };
+
+        lineSeries.removePriceLine(priceLine);
+
+        const finalPriceLine = lineSeries.createPriceLine(newPriceLine);
+
+        const newPriceLines = priceLines.filter((priceLine) => {
+          return !(
+            priceLine._private__priceLine._private__options.positionId ===
+              orderId &&
+            priceLine._private__priceLine._private__options.lineType ===
+              lineType
+          );
+        });
+        setPriceLines([...newPriceLines, finalPriceLine]);
+      }
+    });
+  };
+
   return (
     <Table aria-label="Position Table" className="h-full max-h-full">
       <TableHeader>
@@ -66,10 +155,11 @@ export default function PositionsTable({
         <TableColumn>Type</TableColumn>
         <TableColumn>Entry Price</TableColumn>
         <TableColumn>Current Price</TableColumn>
-
         <TableColumn>Quantity</TableColumn>
+        <TableColumn>TP</TableColumn>
+        <TableColumn>SL</TableColumn>
         <TableColumn>Result</TableColumn>
-        <TableColumn>Close</TableColumn>
+        <TableColumn>Actions</TableColumn>
       </TableHeader>
       {orders != undefined && orders.length != 0 ? (
         <TableBody className="max-h-full">
@@ -79,8 +169,56 @@ export default function PositionsTable({
               <TableCell>{order.type.toUpperCase()}</TableCell>
               <TableCell>{order.entryPrice.toFixed(4)}</TableCell>
               <TableCell>{currentPrice.toFixed(4)}</TableCell>
-
               <TableCell>{order.size / 100000}</TableCell>
+              <TableCell>
+                {editingOrder === order.id ? (
+                  <Input
+                    value={order.tp}
+                    onChange={handleChange(order.id, "tp")}
+                    variant="underlined"
+                    onBlur={() => {
+                      updatePriceLine(order, "tp");
+                      handleSave(order);
+                      setEditingOrder(!editingOrder);
+                    }}
+                    size="sm"
+                    className="max-w-[100px]"
+                  />
+                ) : (
+                  <div className="flex items-center">
+                    {order.tp}
+                    <PencilIcon
+                      className="w-4 h-4 ml-2 cursor-pointer"
+                      onClick={handleEdit(order)}
+                    />
+                  </div>
+                )}
+              </TableCell>
+              <TableCell>
+                {editingOrder === order.id ? (
+                  <Input
+                    value={order.sl}
+                    onChange={handleChange(order.id, "sl")}
+                    variant="underlined"
+                    onBlur={() => {
+                      updatePriceLine(order, "sl");
+
+                      handleSave(order);
+                      setEditingOrder(!editingOrder);
+                    }}
+                    size="sm"
+                    className="max-w-[100px]"
+                  />
+                ) : (
+                  <div className="flex items-center">
+                    {order.sl}
+                    <PencilIcon
+                      className="w-4 h-4 ml-2 cursor-pointer"
+                      onClick={handleEdit(order)}
+                    />
+                  </div>
+                )}
+              </TableCell>
               <TableCell
                 className={
                   (currentPrice - order.entryPrice) *
@@ -97,7 +235,6 @@ export default function PositionsTable({
                   (order.type === "buy" ? 1 : -1)
                 ).toFixed(2)}
               </TableCell>
-
               <TableCell className="cursor-pointer">
                 <Button
                   variant="flat"
