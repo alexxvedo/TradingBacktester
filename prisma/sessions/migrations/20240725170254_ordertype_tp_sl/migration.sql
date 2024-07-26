@@ -28,10 +28,13 @@ CREATE TABLE `operation` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `sessionId` INTEGER NOT NULL,
     `type` VARCHAR(191) NOT NULL,
-    `size` INTEGER NOT NULL,
+    `orderType` VARCHAR(191) NOT NULL,
+    `size` DOUBLE NOT NULL,
     `entryPrice` DOUBLE NOT NULL,
     `exitPrice` DOUBLE NULL,
     `profit` DOUBLE NULL,
+    `tp` DOUBLE NULL,
+    `sl` DOUBLE NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
     PRIMARY KEY (`id`)
