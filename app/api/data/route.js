@@ -1,7 +1,7 @@
-import { PrismaClient as Historical1 } from "@prisma/client/historical1";
-import { PrismaClient as Historical2 } from "@prisma/client/historical2";
-import { PrismaClient as Historical3 } from "@prisma/client/historical3";
-import { PrismaClient as Historical4 } from "@prisma/client/historical4";
+import { PrismaClient as Historical1 } from ".prisma/client/historical1";
+import { PrismaClient as Historical2 } from ".prisma/client/historical2";
+import { PrismaClient as Historical3 } from ".prisma/client/historical3";
+import { PrismaClient as Historical4 } from ".prisma/client/historical4";
 import { auth } from "@clerk/nextjs/server";
 const prismaHistorical1 = new Historical1();
 const prismaHistorical2 = new Historical2();
