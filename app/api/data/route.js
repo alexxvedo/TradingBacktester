@@ -79,6 +79,7 @@ export async function GET(req) {
       },
     });
   } catch (error) {
+    console.log("Error: ", error);
     // If there is an error while fetching the data, return an error response
     return new Response(
       JSON.stringify({ error: "Invalid token or server error" }),
