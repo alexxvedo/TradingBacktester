@@ -95,6 +95,8 @@ export async function GET() {
       },
     });
   } catch (error) {
+    console.log("Invalid token or server error: ", error);
+
     return new Response(
       JSON.stringify({ error: "Invalid token or server error, " + error }),
       {
