@@ -161,6 +161,10 @@ const config = {
         "fromEnvVar": null,
         "value": "debian-openssl-3.0.x",
         "native": true
+      },
+      {
+        "fromEnvVar": null,
+        "value": "rhel-openssl-3.0.x"
       }
     ],
     "previewFeatures": [],
@@ -186,8 +190,8 @@ const config = {
       }
     }
   },
-  "inlineSchema": "generator client {\n  provider = \"prisma-client-js\"\n  output   = \"../../generated/clientSessions\"\n}\n\ndatasource db {\n  provider = \"mysql\"\n  url      = env(\"DATABASE_URL_SESSIONS\")\n}\n\nmodel session {\n  id                 Int       @id @default(autoincrement())\n  userId             String\n  title              String\n  description        String\n  date               DateTime\n  time               DateTime\n  totalOperations    Int       @default(0)\n  profitLoss         Float     @default(0.0)\n  averageGain        Float     @default(0.0)\n  maxDrawdown        Float     @default(0.0)\n  winRate            Float     @default(0.0)\n  createdAt          DateTime  @default(now())\n  startDate          DateTime?\n  endDate            DateTime?\n  currentCandleIndex Int       @default(0)\n  accountSize        Float     @default(0)\n  currentBalance     Float     @default(0)\n  currency           String\n  interval           String\n\n  operations operation[]\n}\n\nmodel operation {\n  id         Int      @id @default(autoincrement())\n  sessionId  Int\n  type       String // buy or sell\n  orderType  String // market or limit\n  size       Float\n  entryPrice Float\n  exitPrice  Float?\n  profit     Float?\n  tp         Float?\n  sl         Float?\n  createdAt  DateTime @default(now())\n\n  session session @relation(fields: [sessionId], references: [id])\n}\n",
-  "inlineSchemaHash": "c903d867fe873e706d428209fa51afd0f951f439227604ea7562615a1018cf35",
+  "inlineSchema": "generator client {\n  provider      = \"prisma-client-js\"\n  output        = \"../../generated/clientSessions\"\n  binaryTargets = [\"native\", \"rhel-openssl-3.0.x\"]\n}\n\ndatasource db {\n  provider = \"mysql\"\n  url      = env(\"DATABASE_URL_SESSIONS\")\n}\n\nmodel session {\n  id                 Int       @id @default(autoincrement())\n  userId             String\n  title              String\n  description        String\n  date               DateTime\n  time               DateTime\n  totalOperations    Int       @default(0)\n  profitLoss         Float     @default(0.0)\n  averageGain        Float     @default(0.0)\n  maxDrawdown        Float     @default(0.0)\n  winRate            Float     @default(0.0)\n  createdAt          DateTime  @default(now())\n  startDate          DateTime?\n  endDate            DateTime?\n  currentCandleIndex Int       @default(0)\n  accountSize        Float     @default(0)\n  currentBalance     Float     @default(0)\n  currency           String\n  interval           String\n\n  operations operation[]\n}\n\nmodel operation {\n  id         Int      @id @default(autoincrement())\n  sessionId  Int\n  type       String // buy or sell\n  orderType  String // market or limit\n  size       Float\n  entryPrice Float\n  exitPrice  Float?\n  profit     Float?\n  tp         Float?\n  sl         Float?\n  createdAt  DateTime @default(now())\n\n  session session @relation(fields: [sessionId], references: [id])\n}\n",
+  "inlineSchemaHash": "4128be1e5c8d461bd87d4bef5d317af6d4e2e554e89620ec854da6f765e6e292",
   "copyEngine": true
 }
 
@@ -227,6 +231,10 @@ Object.assign(exports, Prisma)
 // file annotations for bundling tools to include these files
 path.join(__dirname, "libquery_engine-debian-openssl-3.0.x.so.node");
 path.join(process.cwd(), "../../generated/clientSessions/libquery_engine-debian-openssl-3.0.x.so.node")
+
+// file annotations for bundling tools to include these files
+path.join(__dirname, "libquery_engine-rhel-openssl-3.0.x.so.node");
+path.join(process.cwd(), "../../generated/clientSessions/libquery_engine-rhel-openssl-3.0.x.so.node")
 // file annotations for bundling tools to include these files
 path.join(__dirname, "schema.prisma");
 path.join(process.cwd(), "../../generated/clientSessions/schema.prisma")

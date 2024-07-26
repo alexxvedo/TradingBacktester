@@ -31,12 +31,12 @@ exports.Prisma = Prisma
 exports.$Enums = {}
 
 /**
- * Prisma Client JS version: 5.16.1
- * Query Engine version: 34ace0eb2704183d2c05b60b52fba5c43c13f303
+ * Prisma Client JS version: 5.17.0
+ * Query Engine version: 393aa359c9ad4a4bb28630fb5613f9c281cde053
  */
 Prisma.prismaVersion = {
-  client: "5.16.1",
-  engine: "34ace0eb2704183d2c05b60b52fba5c43c13f303"
+  client: "5.17.0",
+  engine: "393aa359c9ad4a4bb28630fb5613f9c281cde053"
 }
 
 Prisma.PrismaClientKnownRequestError = PrismaClientKnownRequestError;
@@ -127,6 +127,10 @@ const config = {
         "fromEnvVar": null,
         "value": "debian-openssl-3.0.x",
         "native": true
+      },
+      {
+        "fromEnvVar": null,
+        "value": "rhel-openssl-3.0.x"
       }
     ],
     "previewFeatures": [],
@@ -137,12 +141,13 @@ const config = {
     "rootEnvPath": null
   },
   "relativePath": "../../prisma/historical4",
-  "clientVersion": "5.16.1",
-  "engineVersion": "34ace0eb2704183d2c05b60b52fba5c43c13f303",
+  "clientVersion": "5.17.0",
+  "engineVersion": "393aa359c9ad4a4bb28630fb5613f9c281cde053",
   "datasourceNames": [
     "db"
   ],
   "activeProvider": "mysql",
+  "postinstall": false,
   "inlineDatasources": {
     "db": {
       "url": {
@@ -151,8 +156,8 @@ const config = {
       }
     }
   },
-  "inlineSchema": "generator client {\n  provider = \"prisma-client-js\"\n  output   = \"../../generated/clientHistorical4\"\n}\n\ndatasource db {\n  provider = \"mysql\"\n  url      = env(\"DATABASE_URL_HISTORICAL4\")\n}\n\nmodel HistoricalData1Sec {\n  timestamp DateTime @id @db.Timestamp(0)\n  currency  String\n  open      Float\n  high      Float\n  low       Float\n  close     Float\n\n  @@index([timestamp, currency])\n}\n",
-  "inlineSchemaHash": "503631d7f01fc31364e2775535060aeaa486f80cf53fdd9f401eeaab72e0f80e",
+  "inlineSchema": "generator client {\n  provider      = \"prisma-client-js\"\n  output        = \"../../generated/clientHistorical4\"\n  binaryTargets = [\"native\", \"rhel-openssl-3.0.x\"]\n}\n\ndatasource db {\n  provider = \"mysql\"\n  url      = env(\"DATABASE_URL_HISTORICAL4\")\n}\n\nmodel HistoricalData1Sec {\n  timestamp DateTime @id @db.Timestamp(0)\n  currency  String\n  open      Float\n  high      Float\n  low       Float\n  close     Float\n\n  @@index([timestamp, currency])\n}\n",
+  "inlineSchemaHash": "c451336ba0402e1976a9d6c1247dcfdce392fc23aa02e4cb73f9bfa32eb796d5",
   "copyEngine": true
 }
 config.dirname = '/'

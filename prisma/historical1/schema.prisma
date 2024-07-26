@@ -1,6 +1,7 @@
 generator client {
-  provider = "prisma-client-js"
-  output   = "../../generated/clientHistorical1"
+  provider      = "prisma-client-js"
+  output        = "../../generated/clientHistorical1"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
@@ -9,13 +10,13 @@ datasource db {
 }
 
 model historicalData {
-  timestamp   DateTime @db.Timestamp(0)
-  currency    String   
-  open        Float
-  high        Float
-  low         Float
-  close       Float
-  interval    String   // Puede ser "1min", "5min", "15min", "1h", "4h", "1d"
+  timestamp DateTime @db.Timestamp(0)
+  currency  String
+  open      Float
+  high      Float
+  low       Float
+  close     Float
+  interval  String // Puede ser "1min", "5min", "15min", "1h", "4h", "1d"
 
   @@id([timestamp, currency, interval])
   @@index([timestamp, currency, interval])

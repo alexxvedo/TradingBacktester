@@ -31,12 +31,12 @@ exports.Prisma = Prisma
 exports.$Enums = {}
 
 /**
- * Prisma Client JS version: 5.16.1
- * Query Engine version: 34ace0eb2704183d2c05b60b52fba5c43c13f303
+ * Prisma Client JS version: 5.17.0
+ * Query Engine version: 393aa359c9ad4a4bb28630fb5613f9c281cde053
  */
 Prisma.prismaVersion = {
-  client: "5.16.1",
-  engine: "34ace0eb2704183d2c05b60b52fba5c43c13f303"
+  client: "5.17.0",
+  engine: "393aa359c9ad4a4bb28630fb5613f9c281cde053"
 }
 
 Prisma.PrismaClientKnownRequestError = PrismaClientKnownRequestError;
@@ -128,6 +128,10 @@ const config = {
         "fromEnvVar": null,
         "value": "debian-openssl-3.0.x",
         "native": true
+      },
+      {
+        "fromEnvVar": null,
+        "value": "rhel-openssl-3.0.x"
       }
     ],
     "previewFeatures": [],
@@ -138,12 +142,13 @@ const config = {
     "rootEnvPath": null
   },
   "relativePath": "../../prisma/historical1",
-  "clientVersion": "5.16.1",
-  "engineVersion": "34ace0eb2704183d2c05b60b52fba5c43c13f303",
+  "clientVersion": "5.17.0",
+  "engineVersion": "393aa359c9ad4a4bb28630fb5613f9c281cde053",
   "datasourceNames": [
     "db"
   ],
   "activeProvider": "mysql",
+  "postinstall": false,
   "inlineDatasources": {
     "db": {
       "url": {
@@ -152,8 +157,8 @@ const config = {
       }
     }
   },
-  "inlineSchema": "generator client {\n  provider = \"prisma-client-js\"\n  output   = \"../../generated/clientHistorical1\"\n}\n\ndatasource db {\n  provider = \"mysql\"\n  url      = env(\"DATABASE_URL_HISTORICAL1\")\n}\n\nmodel historicalData {\n  timestamp DateTime @db.Timestamp(0)\n  currency  String\n  open      Float\n  high      Float\n  low       Float\n  close     Float\n  interval  String // Puede ser \"1min\", \"5min\", \"15min\", \"1h\", \"4h\", \"1d\"\n\n  @@id([timestamp, currency, interval])\n  @@index([timestamp, currency, interval])\n}\n",
-  "inlineSchemaHash": "af1a85d321598f996e4576c8b58faa9219f65ec30f721539bee50999488e9551",
+  "inlineSchema": "generator client {\n  provider      = \"prisma-client-js\"\n  output        = \"../../generated/clientHistorical1\"\n  binaryTargets = [\"native\", \"rhel-openssl-3.0.x\"]\n}\n\ndatasource db {\n  provider = \"mysql\"\n  url      = env(\"DATABASE_URL_HISTORICAL1\")\n}\n\nmodel historicalData {\n  timestamp DateTime @db.Timestamp(0)\n  currency  String\n  open      Float\n  high      Float\n  low       Float\n  close     Float\n  interval  String // Puede ser \"1min\", \"5min\", \"15min\", \"1h\", \"4h\", \"1d\"\n\n  @@id([timestamp, currency, interval])\n  @@index([timestamp, currency, interval])\n}\n",
+  "inlineSchemaHash": "7ae1cd7fed3981300aa2b537b7fbd0f711478a9dcb7ebcd88048a1e9458252aa",
   "copyEngine": true
 }
 config.dirname = '/'
