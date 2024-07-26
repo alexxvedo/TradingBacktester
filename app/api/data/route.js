@@ -1,9 +1,8 @@
-import { PrismaClient as Historical1 } from "@/generated/clientHistorical1";
-import { PrismaClient as Historical2 } from "@/generated/clientHistorical2";
-import { PrismaClient as Historical3 } from "@/generated/clientHistorical3";
-import { PrismaClient as Historical4 } from "@/generated/clientHistorical4";
+import { PrismaClient as Historical1 } from "@prisma/client";
+import { PrismaClient as Historical2 } from "@prisma/client";
+import { PrismaClient as Historical3 } from "@prisma/client";
+import { PrismaClient as Historical4 } from "@prisma/client";
 import { auth } from "@clerk/nextjs/server";
-
 const prismaHistorical1 = new Historical1();
 const prismaHistorical2 = new Historical2();
 const prismaHistorical3 = new Historical3();
@@ -88,7 +87,7 @@ export async function GET(req) {
         headers: {
           "Content-Type": "application/json",
         },
-      }
+      },
     );
   }
 }

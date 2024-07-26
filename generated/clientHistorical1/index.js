@@ -140,7 +140,8 @@ const config = {
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
-    "rootEnvPath": null
+    "rootEnvPath": null,
+    "schemaEnvPath": "../../.env"
   },
   "relativePath": "../../prisma/historical1",
   "clientVersion": "5.17.0",
@@ -168,8 +169,8 @@ const fs = require('fs')
 config.dirname = __dirname
 if (!fs.existsSync(path.join(__dirname, 'schema.prisma'))) {
   const alternativePaths = [
-    "../../generated/clientHistorical1",
-    "../generated/clientHistorical1",
+    "generated/clientHistorical1",
+    "clientHistorical1",
   ]
   
   const alternativePath = alternativePaths.find((altPath) => {
@@ -198,11 +199,11 @@ Object.assign(exports, Prisma)
 
 // file annotations for bundling tools to include these files
 path.join(__dirname, "libquery_engine-debian-openssl-3.0.x.so.node");
-path.join(process.cwd(), "../../generated/clientHistorical1/libquery_engine-debian-openssl-3.0.x.so.node")
+path.join(process.cwd(), "generated/clientHistorical1/libquery_engine-debian-openssl-3.0.x.so.node")
 
 // file annotations for bundling tools to include these files
 path.join(__dirname, "libquery_engine-rhel-openssl-3.0.x.so.node");
-path.join(process.cwd(), "../../generated/clientHistorical1/libquery_engine-rhel-openssl-3.0.x.so.node")
+path.join(process.cwd(), "generated/clientHistorical1/libquery_engine-rhel-openssl-3.0.x.so.node")
 // file annotations for bundling tools to include these files
 path.join(__dirname, "schema.prisma");
-path.join(process.cwd(), "../../generated/clientHistorical1/schema.prisma")
+path.join(process.cwd(), "generated/clientHistorical1/schema.prisma")

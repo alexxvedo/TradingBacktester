@@ -1,8 +1,7 @@
-import { PrismaClient as Historical1 } from "@/generated/clientHistorical1";
-import { PrismaClient as Historical2 } from "@/generated/clientHistorical2";
-import { PrismaClient as Historical3 } from "@/generated/clientHistorical3";
-import { PrismaClient as Historical4 } from "@/generated/clientHistorical4";
-
+import { PrismaClient as Historical1 } from "@prisma/clientHistorical1";
+import { PrismaClient as Historical2 } from "@prisma/clientHistorical2";
+import { PrismaClient as Historical3 } from "@prisma/clientHistorical3";
+import { PrismaClient as Historical4 } from "@prisma/clientHistorical4";
 import { auth } from "@clerk/nextjs/server";
 
 const prismaHistorical1 = new Historical1();
@@ -71,7 +70,7 @@ export async function GET(req) {
 
       const combinedDates = [...dates2, ...dates3, ...dates4];
       dates = Array.from(
-        new Set(combinedDates.map((data) => data.date))
+        new Set(combinedDates.map((data) => data.date)),
       ).sort();
     } else {
       console.log("Fetching...");

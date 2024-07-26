@@ -1,4 +1,4 @@
-import { PrismaClient } from "@/generated/clientSessions";
+import { PrismaClient } from "@prisma/client";
 import { auth, currentUser } from "@clerk/nextjs/server";
 
 const prisma = new PrismaClient();
@@ -66,7 +66,7 @@ export async function POST(req) {
         headers: {
           "Content-Type": "application/json",
         },
-      }
+      },
     );
   }
 }
@@ -102,7 +102,7 @@ export async function GET() {
         headers: {
           "Content-Type": "application/json",
         },
-      }
+      },
     );
   }
 }

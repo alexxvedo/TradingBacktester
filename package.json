@@ -55,7 +55,7 @@
     "stripe": "^16.2.0"
   },
   "devDependencies": {
-    "@prisma/nextjs-monorepo-workaround-plugin": "^5.17.0",
+    "@prisma/nextjs-monorepo-workaround-plugin": "toniopelo/prisma-nextjs-monorepo-workaround-plugin",
     "@types/react": "18.3.3",
     "eslint": "^8",
     "eslint-config-next": "14.2.4",
