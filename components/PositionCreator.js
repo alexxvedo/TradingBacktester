@@ -1,9 +1,12 @@
-import { Button } from "@nextui-org/button";
+import { Button } from "@/components/ui/button";
+
 import React, { useEffect, useState } from "react";
-import { Input } from "@nextui-org/react";
-import { Tabs, Tab } from "@nextui-org/tabs";
-import { Checkbox } from "@nextui-org/checkbox";
+import { Input } from "@/components/ui/input";
+//import { Tabs, Tab } from "@nextui-org/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { CubeIcon } from "@heroicons/react/24/outline";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import pipCalculator from "@/utils/Sesiones/pipCalculator";
 
 export default function PositionCreator({
   currentPrice,
@@ -16,6 +19,7 @@ export default function PositionCreator({
   setMarkers,
   currentCandleDate,
   addPriceLines,
+  pair,
 }) {
   const [orderSize, setOrderSize] = useState();
   const [limitPrice, setLimitPrice] = useState();
@@ -79,6 +83,7 @@ export default function PositionCreator({
       tp: takeProfitPrice ? takeProfitPrice : null,
       sl: stopLossPrice ? stopLossPrice : null,
       orderType: orderType,
+      entryDate: currentCandleDate,
     };
 
     try {
@@ -95,6 +100,7 @@ export default function PositionCreator({
           tp: takeProfitPrice ? takeProfitPrice : null,
           sl: stopLossPrice ? stopLossPrice : null,
           orderType: orderType,
+          entryDate: currentCandleDate,
         }),
       });
 
@@ -137,10 +143,6 @@ export default function PositionCreator({
     }
   };
 
-  const formatToFiveDigits = (num) => {
-    return num ? num.toString().slice(0, 7) : "";
-  };
-
   const calculateTpSl = (
     entryPrice,
     type,
@@ -148,261 +150,245 @@ export default function PositionCreator({
     valueElementChanged,
   ) => {
     const pipValue = 0.0001;
-    const orderSizeInUnits = orderSize * 100000;
-    console.log(valueElementChanged);
+    const orderSizeInUnits =
+      elementChanged !== "orderSize"
+        ? orderSize * 100000
+        : valueElementChanged * 100000;
     const value = parseFloat(valueElementChanged);
 
-    switch (elementChanged) {
-      case "stopLossValue":
-        const slPriceFromValue =
-          type === "BUY"
-            ? entryPrice - value * pipValue
-            : entryPrice + value * pipValue;
-        setStopLossValue(value);
-        setStopLossPrice(formatToFiveDigits(slPriceFromValue));
+    const result = pipCalculator(
+      entryPrice,
+      orderSizeInUnits,
+      elementChanged,
+      value,
+      type,
+      pair,
+      {
+        stopLossValue: stopLossValue,
+
+        takeProfitValue: takeProfitValue,
+      },
+    );
+
+    console.log(result);
+
+    const regex = /^\d*(\.\d{0,5})?$/;
+
+    if (elementChanged.includes("stopLoss")) {
+      setStopLossPrice(
+        regex.test(result.stopLossPrice.toString())
+          ? result.stopLossPrice.toString()
+          : result.stopLossPrice.toString().split(".")[0] +
+              "." +
+              result.stopLossPrice.toString().split(".")[1].slice(0, 5),
+      );
+      setStopLossAmount(
+        regex.test(result.stopLossAmount.toString())
+          ? result.stopLossAmount.toString()
+          : result.stopLossAmount.toString().split(".")[0] +
+              "." +
+              result.stopLossAmount.toString().split(".")[1].slice(0, 2),
+      );
+      setStopLossPercentage(
+        regex.test(result.stopLossPercentage.toString())
+          ? result.stopLossPercentage.toString()
+          : result.stopLossPercentage.toString().split(".")[0] +
+              "." +
+              result.stopLossPercentage.toString().split(".")[1].slice(0, 3),
+      );
+      setStopLossValue(
+        regex.test(result.stopLossValue.toString())
+          ? result.stopLossValue.toString()
+          : result.stopLossValue.toString().split(".")[0] +
+              "." +
+              result.stopLossValue.toString().split(".")[1].slice(0, 2),
+      );
+    } else if (elementChanged.includes("takeProfit")) {
+      setTakeProfitPrice(
+        regex.test(result.takeProfitPrice.toString())
+          ? result.takeProfitPrice.toString()
+          : result.takeProfitPrice.toString().split(".")[0] +
+              "." +
+              result.takeProfitPrice.toString().split(".")[1].slice(0, 5),
+      );
+      setTakeProfitAmount(
+        regex.test(result.takeProfitAmount.toString())
+          ? result.takeProfitAmount.toString()
+          : result.takeProfitAmount.toString().split(".")[0] +
+              "." +
+              result.takeProfitAmount.toString().split(".")[1].slice(0, 2),
+      );
+      setTakeProfitPercentage(
+        regex.test(result.takeProfitPercentage.toString())
+          ? result.takeProfitPercentage.toString()
+          : result.takeProfitPercentage.toString().split(".")[0] +
+              "." +
+              result.takeProfitPercentage.toString().split(".")[1].slice(0, 3),
+      );
+      setTakeProfitValue(
+        regex.test(result.takeProfitValue)
+          ? result.takeProfitValue
+          : result.takeProfitValue.split(".")[0] +
+              "." +
+              result.takeProfitValue.toString().split(".")[1].slice(0, 2),
+      );
+    } else {
+      if (stopLossAmount) {
         setStopLossAmount(
-          (value * pipValue * orderSizeInUnits * -1).toFixed(2),
+          regex.test(result.stopLossAmount.toString())
+            ? result.stopLossAmount.toString()
+            : result.stopLossAmount.toString().split(".")[0] +
+                "." +
+                result.stopLossAmount.toString().split(".")[1].slice(0, 2),
         );
+      }
+      if (stopLossPercentage) {
         setStopLossPercentage(
-          (((value * pipValue) / entryPrice) * 100).toFixed(2),
+          regex.test(result.stopLossPercentage.toString())
+            ? result.stopLossPercentage.toString()
+            : result.stopLossPercentage.toString().split(".")[0] +
+                "." +
+                result.stopLossPercentage.toString().split(".")[1].slice(0, 3),
         );
-        break;
-
-      case "stopLossPrice":
-        const slValueFromPrice =
-          type === "BUY"
-            ? (entryPrice - value) / pipValue
-            : (value - entryPrice) / pipValue;
-        setStopLossValue(slValueFromPrice.toFixed(2));
-        setStopLossPrice(formatToFiveDigits(value));
-        setStopLossAmount(
-          (slValueFromPrice * pipValue * orderSizeInUnits * -1).toFixed(2),
-        );
-        setStopLossPercentage(
-          (((slValueFromPrice * pipValue) / entryPrice) * 100).toFixed(2),
-        );
-        break;
-
-      case "stopLossAmount":
-        const slValueFromAmount = Math.abs(value) / orderSizeInUnits / pipValue;
-        const slPriceFromAmount =
-          type === "BUY"
-            ? entryPrice - slValueFromAmount * pipValue
-            : entryPrice + slValueFromAmount * pipValue;
-        setStopLossValue(slValueFromAmount.toFixed(2));
-        setStopLossPrice(formatToFiveDigits(slPriceFromAmount));
-        setStopLossAmount(value);
-        setStopLossPercentage(
-          (((slValueFromAmount * pipValue) / entryPrice) * 100).toFixed(2),
-        );
-        break;
-
-      case "stopLossPercentage":
-        const slValueFromPercentage = (value / 100) * (entryPrice / pipValue);
-        const slPriceFromPercentage =
-          type === "BUY"
-            ? entryPrice - slValueFromPercentage * pipValue
-            : entryPrice + slValueFromPercentage * pipValue;
-        setStopLossValue(slValueFromPercentage.toFixed(2));
-        setStopLossPrice(formatToFiveDigits(slPriceFromPercentage));
-        setStopLossAmount(
-          (slValueFromPercentage * pipValue * orderSizeInUnits * -1).toFixed(2),
-        );
-        setStopLossPercentage(value);
-        break;
-
-      case "takeProfitValue":
-        const tpPriceFromValue =
-          type === "BUY"
-            ? entryPrice + value * pipValue
-            : entryPrice - value * pipValue;
-        setTakeProfitValue(value);
-        setTakeProfitPrice(formatToFiveDigits(tpPriceFromValue));
-        setTakeProfitAmount((value * pipValue * orderSizeInUnits).toFixed(2));
-        setTakeProfitPercentage(
-          (((value * pipValue) / entryPrice) * 100).toFixed(2),
-        );
-        break;
-
-      case "takeProfitPrice":
-        const tpValueFromPrice =
-          type === "BUY"
-            ? (value - entryPrice) / pipValue
-            : (entryPrice - value) / pipValue;
-        setTakeProfitValue(tpValueFromPrice.toFixed(2));
-        setTakeProfitPrice(formatToFiveDigits(valueElementChanged)); // Mantén la cadena original para la edición
+      }
+      if (takeProfitAmount) {
         setTakeProfitAmount(
-          (tpValueFromPrice * pipValue * orderSizeInUnits).toFixed(2),
+          regex.test(result.takeProfitAmount.toString())
+            ? result.takeProfitAmount.toString()
+            : result.takeProfitAmount.toString().split(".")[0] +
+                "." +
+                result.takeProfitAmount.toString().split(".")[1].slice(0, 2),
         );
+      }
+      if (takeProfitPercentage) {
         setTakeProfitPercentage(
-          (((tpValueFromPrice * pipValue) / entryPrice) * 100).toFixed(2),
+          regex.test(result.takeProfitPercentage.toString())
+            ? result.takeProfitPercentage.toString()
+            : result.takeProfitPercentage.toString().split(".")[0] +
+                "." +
+                result.takeProfitPercentage
+                  .toString()
+                  .split(".")[1]
+                  .slice(0, 3),
         );
-        break;
-
-      case "takeProfitAmount":
-        const tpValueFromAmount = value / orderSizeInUnits / pipValue;
-        const tpPriceFromAmount =
-          type === "BUY"
-            ? entryPrice + tpValueFromAmount * pipValue
-            : entryPrice - tpValueFromAmount * pipValue;
-        setTakeProfitValue(tpValueFromAmount.toFixed(2));
-        setTakeProfitPrice(formatToFiveDigits(tpPriceFromAmount));
-        setTakeProfitAmount(value);
-        setTakeProfitPercentage(
-          (((tpValueFromAmount * pipValue) / entryPrice) * 100).toFixed(2),
-        );
-        break;
-
-      case "takeProfitPercentage":
-        const tpValueFromPercentage = (value / 100) * (entryPrice / pipValue);
-        const tpPriceFromPercentage =
-          type === "BUY"
-            ? entryPrice + tpValueFromPercentage * pipValue
-            : entryPrice - tpValueFromPercentage * pipValue;
-        setTakeProfitValue(tpValueFromPercentage.toFixed(2));
-        setTakeProfitPrice(formatToFiveDigits(tpPriceFromPercentage));
-        setTakeProfitAmount(
-          (tpValueFromPercentage * pipValue * orderSizeInUnits).toFixed(2),
-        );
-        setTakeProfitPercentage(value);
-        break;
-
-      case "orderSize":
-        const newOrderSize = value;
-        if (stopLossValue) {
-          const slPriceFromValue =
-            type === "BUY"
-              ? entryPrice - stopLossValue * pipValue
-              : entryPrice + stopLossValue * pipValue;
-          setStopLossPrice(formatToFiveDigits(slPriceFromValue));
-          setStopLossAmount(
-            (stopLossValue * pipValue * newOrderSize * 100000 * -1).toFixed(2),
-          );
-          setStopLossPercentage(
-            (((stopLossValue * pipValue) / entryPrice) * 100).toFixed(2),
-          );
-        }
-        if (takeProfitValue) {
-          const tpPriceFromValue =
-            type === "BUY"
-              ? entryPrice + takeProfitValue * pipValue
-              : entryPrice - takeProfitValue * pipValue;
-          setTakeProfitPrice(formatToFiveDigits(tpPriceFromValue));
-          setTakeProfitAmount(
-            (takeProfitValue * pipValue * newOrderSize * 100000).toFixed(2),
-          );
-          setTakeProfitPercentage(
-            (((takeProfitValue * pipValue) / entryPrice) * 100).toFixed(2),
-          );
-        }
-        break;
-
-      default:
-        break;
+      }
     }
   };
 
   return (
-    <div className="flex flex-col items-center justify-start min-w-full p-4 h-full">
-      <div className="flex flex-col items-center justify-center gap-4 mb-4 w-full h-full ">
-        <div className="flex items-center justify-center  w-full h-full">
-          <span className="text-4xl font-bold text-center">
-            {currentPrice
-              .toFixed(5)
-              .split("")
-              .map((digit, index) => (
-                <span key={index} className={priceColors[index] || ""}>
-                  {digit}
-                </span>
-              ))}
-          </span>
-        </div>
+    <div className="flex flex-col items-center justify-start min-w-full p-4 overflow-hidden hover:overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-200 scrollbar-track-zinc-900">
+      <div className="flex flex-col items-center justify-center  w-full ">
         <Tabs
-          aria-label="Position options"
-          className=" items-center justify-center"
-          selectedKey={orderType}
-          onSelectedTabChange={setOrderType}
+          defaultValue="market"
+          className=" flex flex-col items-center justify-center "
         >
-          <Tab
-            label="Mercado"
-            title="Mercado"
-            key="market"
-            className="w-full h-full"
+          <TabsList className="grid grid-cols-2 w-[50%]">
+            <TabsTrigger value="market">Market</TabsTrigger>
+            <TabsTrigger value="limit">Limit</TabsTrigger>
+          </TabsList>
+          <TabsContent
+            value="market"
+            className="max-w-full max-h-full flex flex-col gap-4 items-center justify-center p-4"
           >
-            <div className="flex flex-col flex-w-full h-full p-4 gap-4">
-              <div className="flex flex-row justify-between w-full h-[15%]">
-                <Button
-                  size="lg"
-                  radius="sm"
-                  color={positionType === "SELL" ? "danger" : "default"}
-                  onClick={() => {
-                    setPositionType("SELL");
-                  }}
-                  className="w-full"
+            <div className="flex  flex-row justify-between h-[15%] w-full">
+              <Button
+                onClick={() => {
+                  setPositionType("SELL");
+                }}
+                variant={`${positionType === "SELL" ? "sell" : "secondary"}`}
+                className="w-full"
+                size="lg"
+              >
+                SELL
+              </Button>
+              <Button
+                onClick={() => {
+                  setPositionType("BUY");
+                }}
+                variant={`${positionType === "BUY" ? "buy" : "secondary"}`}
+                className="w-full"
+                size="lg"
+              >
+                BUY
+              </Button>
+            </div>
+            <div className="flex sm:flex-col sm:gap-4 sm:items-center sm:justify-center flex-row w-[40%]">
+              <div className="flex flex-col w-full sm:items-center">
+                <lable id="currentPrice" className="px-2 text-md font-bold">
+                  Current Price
+                </lable>
+                <span
+                  className="text-3xl font-bold text-center"
+                  htmlFor="currentPrice"
                 >
-                  SELL
-                </Button>
-                <Button
-                  color={positionType === "BUY" ? "primary" : "default"}
-                  size="lg"
-                  radius="sm"
-                  onClick={() => {
-                    setPositionType("BUY");
-                  }}
-                  className="w-full"
-                >
-                  BUY
-                </Button>
+                  {currentPrice
+                    .toFixed(5)
+                    .split("")
+                    .map((digit, index) => (
+                      <span key={index} className={priceColors[index] || ""}>
+                        {digit}
+                      </span>
+                    ))}
+                </span>
               </div>
-              <div className="flex w-full gap-1">
+              <div className="flex flex-col w-full sm:items-center sm:text-center">
+                <lable id="orderSize" className="px-2 text-md font-bold">
+                  Order Size (Lots)
+                </lable>
                 <Input
-                  value={currentPrice}
-                  isReadOnly
-                  label="Current Price"
-                  type="number"
-                  size="sm"
-                  variant="underlined"
-                  classNames=""
-                  className="rounded-md text-zinc-200"
-                />
-                <Input
+                  htmlFor="orderSize"
                   value={orderSize}
                   label="Lots"
                   type="number"
-                  size="sm"
-                  variant="underlined"
-                  classNames=""
+                  className=""
                   onChange={(e) => {
-                    setOrderSize(e.target.value);
+                    const regex = /^\d*(\.\d{0,2})?$/;
+                    const validated = regex.test(e.target.value)
+                      ? e.target.value
+                      : e.target.value.slice(0, -1);
+                    setOrderSize(validated);
                     calculateTpSl(
                       currentPrice,
                       positionType,
                       "orderSize",
-                      e.target.value,
+                      validated,
                     );
                   }}
-                  className=" rounded-md text-zinc-200"
                 />
               </div>
-              <div className="flex flex-row w-full gap-4">
-                <div className="flex flex-col justify-between items-center mt-4 gap-2">
+            </div>
+            <div className="flex flex-row min-w-full gap-4 justify-start items-center ">
+              <div className="flex flex-col justify-between items-center  gap-2">
+                <div className="flex w-full items-center justify-center gap-4">
                   <Checkbox
-                    label="Stop Loss"
-                    isSelected={stopLoss}
-                    onChange={(e) => setStopLoss(e.target.checked)}
+                    id="stopLoss"
+                    onCheckedChange={(checked) => setStopLoss(checked)}
+                  />
+                  <label htmlFor="stopLoss">Stop Loss</label>
+                </div>
+                <div className="flex flex-col w-full">
+                  <lable
+                    id="stopLossValue"
+                    className={`px-2 text-md ${stopLoss ? "font-bold" : "font-bold opacity-25"} `}
                   >
-                    Stop Loss
-                  </Checkbox>
+                    Pips
+                  </lable>
                   <Input
-                    isDisabled={!stopLoss}
+                    htmlFor="stopLossValue"
+                    disabled={!stopLoss}
                     value={stopLossValue}
                     onChange={(e) => {
-                      setStopLossValue(e.target.value);
+                      const regex = /^\d*(\.\d{0,2})?$/;
+                      const validated = regex.test(e.target.value)
+                        ? e.target.value
+                        : e.target.value.slice(0, -1);
+                      setStopLossValue(validated);
+
                       calculateTpSl(
                         currentPrice,
                         positionType,
                         "stopLossValue",
-                        e.target.value,
+                        validated,
                       );
                     }}
                     label="Pips"
@@ -410,16 +396,29 @@ export default function PositionCreator({
                     variant="bordered"
                     size="sm"
                   />
+                </div>
+                <div className="flex flex-col w-full">
+                  <lable
+                    id="stopLossPrice"
+                    className={`px-2 text-md ${stopLoss ? "font-bold" : "font-bold opacity-25"} `}
+                  >
+                    Price
+                  </lable>
                   <Input
-                    isDisabled={!stopLoss}
+                    htmlFor="stopLossPrice"
+                    disabled={!stopLoss}
                     value={stopLossPrice}
                     onChange={(e) => {
-                      setStopLossPrice(e.target.value);
+                      const regex = /^\d*(\.\d{0,5})?$/;
+                      const validated = regex.test(e.target.value)
+                        ? e.target.value
+                        : e.target.value.slice(0, -1);
+                      setStopLossPrice(validated);
                       calculateTpSl(
                         currentPrice,
                         positionType,
                         "stopLossPrice",
-                        e.target.value,
+                        validated,
                       );
                     }}
                     label="Price"
@@ -427,39 +426,59 @@ export default function PositionCreator({
                     variant="bordered"
                     size="sm"
                   />
+                </div>
+                <div className="flex flex-col w-full">
+                  <lable
+                    id="stopLossAmount"
+                    className={`px-2 text-md ${stopLoss ? "font-bold" : "font-bold opacity-25"} `}
+                  >
+                    $
+                  </lable>
                   <Input
-                    isDisabled={!stopLoss}
+                    htmlFor="stopLossAmount"
+                    disabled={!stopLoss}
                     value={stopLossAmount}
                     onChange={(e) => {
-                      const value = e.target.value;
-                      // Permitir valores negativos, decimales y el símbolo "-" para números negativos
-                      if (/^-?\d*\.?\d*$/.test(value)) {
-                        setStopLossAmount(value);
-                        if (!isNaN(parseFloat(value))) {
-                          calculateTpSl(
-                            currentPrice,
-                            positionType,
-                            "stopLossAmount",
-                            parseFloat(value),
-                          );
-                        }
-                      }
+                      const regex = /^\d*(\.\d{0,2})?$/;
+                      const validated = regex.test(e.target.value)
+                        ? e.target.value
+                        : e.target.value.slice(0, -1);
+                      setStopLossAmount(validated);
+                      calculateTpSl(
+                        currentPrice,
+                        positionType,
+                        "stopLossAmount",
+                        validated,
+                      );
                     }}
                     label="$"
-                    type="text"
+                    type="number"
                     variant="bordered"
                     size="sm"
                   />
+                </div>
+                <div className="flex flex-col w-full">
+                  <lable
+                    id="stopLossPercentage"
+                    className={`px-2 text-md ${stopLoss ? "font-bold" : "font-bold opacity-25"} `}
+                  >
+                    %
+                  </lable>
                   <Input
-                    isDisabled={!stopLoss}
+                    htmlFor="stopLossPercentage"
+                    disabled={!stopLoss}
                     value={stopLossPercentage}
                     onChange={(e) => {
-                      setStopLossPercentage(e.target.value);
+                      const regex = /^\d*(\.\d{0,2})?$/;
+                      const validated = regex.test(e.target.value)
+                        ? e.target.value
+                        : e.target.value.slice(0, -1);
+                      setStopLossPercentage(validated);
                       calculateTpSl(
                         currentPrice,
                         positionType,
                         "stopLossPercentage",
-                        e.target.value,
+                        validated,
                       );
                     }}
                     label="%"
@@ -468,16 +487,25 @@ export default function PositionCreator({
                     size="sm"
                   />
                 </div>
-                <div className="flex flex-col justify-between items-center mt-4">
+              </div>
+              <div className="flex flex-col justify-between items-center  gap-2">
+                <div className="flex w-full items-center justify-center gap-4">
                   <Checkbox
-                    label="Take Profit"
-                    isSelected={takeProfit}
-                    onChange={(e) => setTakeProfit(e.target.checked)}
+                    id="takeProfit"
+                    onCheckedChange={(checked) => setTakeProfit(checked)}
+                  />
+                  <label htmlFor="stopLoss">Take Profit</label>
+                </div>
+                <div className="flex flex-col w-full">
+                  <lable
+                    id="takeProfitValue"
+                    className={`px-2 text-md ${takeProfit ? "font-bold" : "font-bold opacity-25"} `}
                   >
-                    Take Profit
-                  </Checkbox>
+                    Pips
+                  </lable>
                   <Input
-                    isDisabled={!takeProfit}
+                    htmlFor="takeProfitValue"
+                    disabled={!takeProfit}
                     value={takeProfitValue}
                     onChange={(e) => {
                       setTakeProfitValue(e.target.value);
@@ -493,8 +521,17 @@ export default function PositionCreator({
                     variant="bordered"
                     size="sm"
                   />
+                </div>
+                <div className="flex flex-col w-full">
+                  <lable
+                    id="takeProfitPrice"
+                    className={`px-2 text-md ${takeProfit ? "font-bold" : "font-bold opacity-25"} `}
+                  >
+                    Price
+                  </lable>
                   <Input
-                    isDisabled={!takeProfit}
+                    htmlFor="takeProfitPrice"
+                    disabled={!takeProfit}
                     value={takeProfitPrice}
                     onChange={(e) => {
                       var value = e.target.value;
@@ -513,8 +550,17 @@ export default function PositionCreator({
                     variant="bordered"
                     size="sm"
                   />
+                </div>
+                <div className="flex flex-col w-full">
+                  <lable
+                    id="takeProfitAmount"
+                    className={`px-2 text-md ${takeProfit ? "font-bold" : "font-bold opacity-25"} `}
+                  >
+                    $
+                  </lable>
                   <Input
-                    isDisabled={!takeProfit}
+                    htmlFor="takeProfitAmount"
+                    disabled={!takeProfit}
                     value={takeProfitAmount}
                     onChange={(e) => {
                       const value = e.target.value;
@@ -535,8 +581,17 @@ export default function PositionCreator({
                     variant="bordered"
                     size="sm"
                   />
+                </div>
+                <div className="flex flex-col w-full">
+                  <lable
+                    id="takeProfitPercentage"
+                    className={`px-2 text-md ${takeProfit ? "font-bold" : "font-bold opacity-25"} `}
+                  >
+                    %
+                  </lable>
                   <Input
-                    isDisabled={!takeProfit}
+                    htmlFor="takeProfitPercentage"
+                    disabled={!takeProfit}
                     value={takeProfitPercentage}
                     onChange={(e) => {
                       setTakeProfitPercentage(e.target.value);
@@ -554,49 +609,41 @@ export default function PositionCreator({
                   />
                 </div>
               </div>
-
-              <Button
-                onClick={() =>
-                  handleOrderSubmit(
-                    positionType.toLowerCase(),
-                    parseFloat(orderSize * 100000),
-                  )
-                }
-                color={positionType === "BUY" ? "primary" : "danger"}
-                className="mt-4"
-                radius="sm"
-              >
-                {positionType === "BUY" ? "BUY" : "SELL"}
-              </Button>
             </div>
-          </Tab>
-          <Tab
-            label="Límite"
-            title="Límite"
-            key="limit"
-            className="w-full h-full"
-          >
-            <div className="flex flex-col flex-w-full h-full p-4 gap-4">
+            <Button
+              onClick={() =>
+                handleOrderSubmit(
+                  positionType.toLowerCase(),
+                  parseFloat(orderSize * 100000),
+                )
+              }
+              variant={`${positionType === "BUY" ? "buy" : "sell"}`}
+              color={positionType === "BUY" ? "primary" : "danger"}
+              className="mt-4 w-full  "
+            >
+              {positionType === "BUY" ? "BUY" : "SELL"}
+            </Button>
+          </TabsContent>
+          <TabsContent value="limit" className="w-full h-full">
+            <div className="flex flex-col flex-w-full h-full py-4 gap-4">
               <div className="flex flex-row justify-between w-full h-[15%]">
                 <Button
-                  size="lg"
-                  radius="sm"
-                  color={positionType === "SELL" ? "danger" : "default"}
                   onClick={() => {
                     setPositionType("SELL");
                   }}
+                  variant={`${positionType === "SELL" ? "sell" : "secondary"}`}
                   className="w-full"
+                  size="lg"
                 >
                   SELL
                 </Button>
                 <Button
-                  color={positionType === "BUY" ? "primary" : "default"}
-                  size="lg"
-                  radius="sm"
                   onClick={() => {
                     setPositionType("BUY");
                   }}
+                  variant={`${positionType === "BUY" ? "buy" : "secondary"}`}
                   className="w-full"
+                  size="lg"
                 >
                   BUY
                 </Button>
@@ -635,7 +682,7 @@ export default function PositionCreator({
                     Stop Loss
                   </Checkbox>
                   <Input
-                    isDisabled={!stopLoss}
+                    disabled={!stopLoss}
                     value={stopLossValue}
                     onChange={(e) => setStopLossValue(e.target.value)}
                     label="Pips"
@@ -644,7 +691,7 @@ export default function PositionCreator({
                     size="sm"
                   />
                   <Input
-                    isDisabled={!stopLoss}
+                    disabled={!stopLoss}
                     value={stopLossPrice}
                     onChange={(e) => setStopLossPrice(e.target.value)}
                     label="Price"
@@ -653,7 +700,7 @@ export default function PositionCreator({
                     size="sm"
                   />
                   <Input
-                    isDisabled={!stopLoss}
+                    disabled={!stopLoss}
                     value={stopLossAmount}
                     onChange={(e) => setStopLossAmount(e.target.value)}
                     label="$"
@@ -662,7 +709,7 @@ export default function PositionCreator({
                     size="sm"
                   />
                   <Input
-                    isDisabled={!stopLoss}
+                    disabled={!stopLoss}
                     value={stopLossPercentage}
                     onChange={(e) => setStopLossPercentage(e.target.value)}
                     label="%"
@@ -729,7 +776,7 @@ export default function PositionCreator({
                 {positionType === "BUY" ? "BUY" : "SELL"}
               </Button>
             </div>
-          </Tab>
+          </TabsContent>
         </Tabs>
       </div>
     </div>

@@ -1,12 +1,16 @@
+//import { Table,   TableHeader,  TableRow,  TableColumn,  TableBody,  TableCell,} from "@nextui-org/table";
+
 import {
   Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
   TableHeader,
   TableRow,
-  TableColumn,
-  TableBody,
-  TableCell,
-} from "@nextui-org/table";
-import { Button } from "@nextui-org/button";
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+
 import { Input } from "@nextui-org/input";
 import { useState } from "react";
 import { PencilIcon } from "@heroicons/react/24/solid";
@@ -22,6 +26,7 @@ export default function PositionsTable({
   lineSeries,
   priceLines,
   setPriceLines,
+  currentCandleDate,
 }) {
   const [editingOrder, setEditingOrder] = useState(null);
 
@@ -35,6 +40,7 @@ export default function PositionsTable({
         (currentPrice - order.entryPrice) *
         order.size *
         (order.type === "buy" ? 1 : -1),
+      exitDate: currentCandleDate,
     };
     setHistory([...history, newOrder]);
 
@@ -52,6 +58,7 @@ export default function PositionsTable({
             accountSize,
             takeProfit: order.takeProfit,
             stopLoss: order.stopLoss,
+            exitDate: newOrder.exitDate,
           },
           type: "close",
         }),
@@ -71,6 +78,13 @@ export default function PositionsTable({
             lineSeries.removePriceLine(priceLine);
           }
         });
+        setPriceLines(
+          priceLines.filter(
+            (priceLine) =>
+              priceLine._private__priceLine._private__options.positionId !==
+              key,
+          ),
+        );
       } else {
         console.error("Failed to close operation");
       }
@@ -149,23 +163,27 @@ export default function PositionsTable({
   };
 
   return (
-    <Table aria-label="Position Table" className="h-full max-h-full">
+    <Table aria-label="Position Table" className="max-h-[100%]">
       <TableHeader>
-        <TableColumn>Date</TableColumn>
-        <TableColumn>Type</TableColumn>
-        <TableColumn>Entry Price</TableColumn>
-        <TableColumn>Current Price</TableColumn>
-        <TableColumn>Quantity</TableColumn>
-        <TableColumn>TP</TableColumn>
-        <TableColumn>SL</TableColumn>
-        <TableColumn>Result</TableColumn>
-        <TableColumn>Actions</TableColumn>
+        <TableRow>
+          <TableHead>Date</TableHead>
+          <TableHead>Type</TableHead>
+          <TableHead>Entry Price</TableHead>
+          <TableHead>Current Price</TableHead>
+          <TableHead>Quantity</TableHead>
+          <TableHead>TP</TableHead>
+          <TableHead>SL</TableHead>
+          <TableHead>Result</TableHead>
+          <TableHead>Actions</TableHead>
+        </TableRow>
       </TableHeader>
-      {orders != undefined && orders.length != 0 ? (
-        <TableBody className="max-h-full">
+      {orders != undefined && orders.length != 0 && (
+        <TableBody className="max-h-[80%]">
           {orders.map((order, index) => (
             <TableRow key={index}>
-              <TableCell>{order.date}</TableCell>
+              <TableCell>
+                {`${new Date(order.entryDate).toLocaleDateString()}, ${new Date(order.entryDate).toLocaleTimeString()}`}
+              </TableCell>
               <TableCell>{order.type.toUpperCase()}</TableCell>
               <TableCell>{order.entryPrice.toFixed(4)}</TableCell>
               <TableCell>{currentPrice.toFixed(4)}</TableCell>
@@ -247,8 +265,15 @@ export default function PositionsTable({
             </TableRow>
           ))}
         </TableBody>
-      ) : (
-        <TableBody emptyContent={"No rows to display."}>{[]}</TableBody>
+      )}
+      {(orders === undefined || orders.length === 0) && (
+        <TableBody>
+          <TableRow>
+            <TableCell colSpan={9} className="text-center">
+              No positions to show
+            </TableCell>
+          </TableRow>
+        </TableBody>
       )}
     </Table>
   );

@@ -43,6 +43,8 @@ model operation {
   profit     Float?
   tp         Float?
   sl         Float?
+  entryDate  DateTime
+    exitDate   DateTime?
   createdAt  DateTime @default(now())
 
   session session @relation(fields: [sessionId], references: [id])

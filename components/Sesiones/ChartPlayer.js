@@ -4,9 +4,20 @@ import FastForwardIcon from "@/public/forward.svg";
 import Save from "@/public/save.svg";
 import PlayIcon from "@/public/play.svg";
 import Image from "next/image";
-import { Slider } from "@nextui-org/slider";
-import { Select, SelectItem } from "@nextui-org/select";
-import { Button } from "@nextui-org/button";
+import { Slider } from "@/components/ui/slider";
+//import { Select, SelectItem } from "@nextui-org/select";
+
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+import { Button } from "@/components/ui/button";
 
 export default function ChartPlayer({
   isPaused,
@@ -22,57 +33,60 @@ export default function ChartPlayer({
 }) {
   return (
     <div className="flex items-center justify-center gap-4 mt-4 max-h-[5%]">
-      <Button variant="ghost" size="icon">
+      <Button size="icon" variant="outline">
         <Image
           src={RewindIcon}
           alt="Rewind"
-          className={`h-5 w-5 ${theme === "light" ? "invert" : "invert-0"}`}
+          sizes="icon"
+          className={` w-full h-full ${theme === "light" ? "invert" : "invert-0"}`}
         />
       </Button>
-      <Button variant="ghost" size="icon" onClick={togglePause}>
+      <Button variant="outline" size="icon" onClick={togglePause}>
         <Image
           src={!isPaused ? PauseIcon : PlayIcon}
           alt="Pause"
-          className={`h-5 w-5 ${theme === "light" ? "invert" : "invert-0"}`}
+          sizes="icon"
+          className={`w-full h-full ${theme === "light" ? "invert" : "invert-0"}`}
         />
       </Button>
       <Slider
         color={"foreground"}
-        aria-label="Speed"
-        minValue={1}
-        maxValue={200}
-        value={candlePerSecond}
-        onChange={setCandlePerSecond}
+        defaultValue={[candlePerSecond]}
+        max={200}
+        min={1}
+        step={1}
+        onValueChange={setCandlePerSecond}
       />
-      <Button variant="ghost" size="icon">
+      <Button variant="outline" size="icon">
         <Image
           src={FastForwardIcon}
           alt="Fast Forward"
-          className={`h-5 w-5 ${theme === "light" ? "invert" : "invert-0"}`}
+          sizes="icon"
+          className={`w-full h-full ${theme === "light" ? "invert" : "invert-0"}`}
         />
       </Button>
-      <Button color="success" size="icon" onClick={saveSessionData}>
-        <Image src={Save} alt="Fast Forward" className="h-5 w-5" />
+      <Button variant="save" size="icon" onClick={saveSessionData}>
+        <Image src={Save} alt="Fast Forward" className="w-full h-full" />
       </Button>
       <Select
         label="Timezone"
         id="timeZone"
         className="w-1/4"
-        selectedKeys={[timeZone]}
-        onChange={(e) => {
-          setTimeZone(e.target.value);
-        }}
         value={timeZone}
+        onValueChange={(option) => setTimeZone(option)}
       >
-        {timeZones.map((timeZone) => (
-          <SelectItem
-            key={timeZone.value}
-            value={timeZone.value}
-            textValue={`${timeZone.label} - ${timeZone.value}`}
-          >
-            {timeZone.label} - {timeZone.value}
-          </SelectItem>
-        ))}
+        <SelectTrigger className="w-[180px]">
+          <SelectValue placeholder={timeZone.value} />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            {timeZones.map((timezone) => (
+              <SelectItem key={timezone.value} value={timezone.value}>
+                {timezone.value}
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        </SelectContent>
       </Select>
     </div>
   );

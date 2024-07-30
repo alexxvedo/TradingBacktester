@@ -1,7 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { Button, Link } from "@nextui-org/react";
+import { Link } from "@nextui-org/react";
+import { Button } from "@/components/ui/button";
 import "chart.js/auto";
-import { Card, CardHeader, CardBody } from "@nextui-org/card";
+//import { Card, CardHeader, CardBody } from "@nextui-org/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import SesionCardContent from "./SesionCardContent";
 
 const SesionCard = ({ sesion }) => {
@@ -13,27 +22,31 @@ const SesionCard = ({ sesion }) => {
         const res = await fetch(`/api/operations?sessionId=${sesion.id}`);
         const data = await res.json();
 
-        // Group operations by date and keep the last operation of each day
+        // Group operations by date and sum the profits of all operations of each day
         const groupedOperations = data.reduce((acc, op) => {
-          const date = new Date(op.createdAt).toLocaleDateString();
-          if (
-            !acc[date] ||
-            new Date(acc[date].createdAt).toLocaleString() <
-              new Date(op.createdAt).toLocaleString()
-          ) {
-            acc[date] = op;
+          const date = new Date(op.exitDate).toLocaleDateString();
+          if (!acc[date]) {
+            acc[date] = { date: op.exitDate, totalProfit: 0 };
           }
+          acc[date].totalProfit += op.profit;
           return acc;
         }, {});
 
-        // Calculate the balance over time
+        // Calculate the balance over time, starting with the initial account size
         let currentBalance = sesion.accountSize;
-        const calculatedBalances = Object.values(groupedOperations).map(
-          (op) => {
-            currentBalance += op.profit;
-            return { date: op.createdAt, balance: currentBalance };
+        const calculatedBalances = [
+          {
+            date: new Date(sesion.startDate).toLocaleDateString(),
+            balance: currentBalance,
           },
-        );
+          ...Object.values(groupedOperations).map((group) => {
+            currentBalance += group.totalProfit;
+            return {
+              date: new Date(group.date).toLocaleDateString(),
+              balance: currentBalance,
+            };
+          }),
+        ];
 
         setBalances(calculatedBalances);
       } catch (error) {
@@ -44,29 +57,14 @@ const SesionCard = ({ sesion }) => {
     fetchOperations();
   }, [sesion.id, sesion.accountSize]);
 
-  const data = {
-    labels: balances.map((b) => new Date(b.date).toLocaleDateString()),
-    datasets: [
-      {
-        label: "Balance Over Time",
-        data: balances.map((b) => b.balance),
-        fill: false,
-        backgroundColor: "rgb(132, 99, 255)",
-        borderColor: "rgba(132, 99, 255, 0.2)",
-      },
-    ],
-  };
-
-  const options = {
-    scales: {
-      y: {
-        beginAtZero: false,
-      },
-    },
-    maintainAspectRatio: true,
-    responsive: true,
-    height: 300, // or any desired height
-  };
+  const data = [
+    balances.map((b) => {
+      return {
+        date: new Date(b.date).toLocaleDateString(),
+        balance: b.balance,
+      };
+    }),
+  ];
 
   return (
     <Card className="max-w-[500px] h-full">
@@ -81,14 +79,12 @@ const SesionCard = ({ sesion }) => {
           </small>
         </div>
         <Link href={`/sesiones/${sesion.id}`} className="max-w-[45%] ">
-          <Button variant="ghost" color="secondary">
-            Go to session
-          </Button>
+          <Button color="primary">Go to session</Button>
         </Link>
       </CardHeader>
-      <CardBody>
-        <SesionCardContent sesion={sesion} data={data} options={options} />
-      </CardBody>
+      <CardContent>
+        <SesionCardContent sesion={sesion} balances={balances} />
+      </CardContent>
     </Card>
   );
 };

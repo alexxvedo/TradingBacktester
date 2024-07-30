@@ -5,7 +5,6 @@ const prisma = new PrismaClient();
 
 export async function POST(req) {
   const { userId } = await auth();
-  console.log(userId);
   if (!userId) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
@@ -14,8 +13,6 @@ export async function POST(req) {
       },
     });
   }
-
-  console.log("Estoy aqui");
 
   try {
     const {
@@ -28,7 +25,6 @@ export async function POST(req) {
       timeframe,
       realistic,
     } = await req.json();
-    console.log();
     const sesion = await prisma.session.create({
       data: {
         userId: userId,

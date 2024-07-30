@@ -278,7 +278,7 @@ export default function ChartComponent({
       chartContainerRef.current.addEventListener("mousedown", handleMouseDown);
       chartContainerRef.current.addEventListener("mouseup", handleMouseUp);
 
-      return () => {
+      /*return () => {
         chartContainerRef.current.removeEventListener(
           "mousemove",
           handleMouseMove,
@@ -288,7 +288,7 @@ export default function ChartComponent({
           handleMouseDown,
         );
         chartContainerRef.current.removeEventListener("mouseup", handleMouseUp);
-      };
+        };*/
     }
   }, [priceLines, dragging]);
 

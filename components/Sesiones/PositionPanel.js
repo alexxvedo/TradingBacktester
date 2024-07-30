@@ -9,7 +9,9 @@ import CloseFullScreen from "@/public/close_fullscreen.svg";
 import OpenFullScreen from "@/public/open_fullscreen.svg";
 import PositionsTable from "@/components/Sesiones/PositionsTable";
 import HistoryTable from "@/components/Sesiones/HistoryTable";
-import { Tabs, Tab } from "@nextui-org/tabs";
+
+//import { Tabs, Tab } from "@nextui-org/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function PositionPanel({
   panelOpen,
@@ -24,6 +26,7 @@ export default function PositionPanel({
   priceLines,
   setPriceLines,
   addPriceLines,
+  currentCandleDate,
 }) {
   const [history, setHistory] = useState([]);
   const [fetchingPositions, setFetchingPositions] = useState(true);
@@ -50,6 +53,7 @@ export default function PositionPanel({
           var historyPositions = [];
           var currentPositions = [];
           data.map((position) => {
+            console.log(position);
             if (position.exitPrice) {
               historyPositions.push({
                 id: position.id,
@@ -59,6 +63,8 @@ export default function PositionPanel({
                 exitPrice: position.exitPrice,
                 profit: position.profit,
                 createdAt: position.createdAt,
+                entryDate: position.entryDate,
+                exitDate: position.exitDate,
               });
             } else {
               currentPositions.push({
@@ -69,6 +75,7 @@ export default function PositionPanel({
                 profit: position.profit,
                 tp: position.tp,
                 sl: position.sl,
+                entryDate: position.entryDate,
               });
               console.log("Anadiendo priceLine");
               addPriceLines(position);
@@ -106,94 +113,76 @@ export default function PositionPanel({
 
   return (
     userId && (
-      <div
-        className={`flex flex-row px-4 max-h-full min-h-full h-full w-full rounded-lg align-middle items-center justify-center ${
-          panelOpen ? "p-4" : ""
-        }`}
-      >
-        <div className="w-full h-[95%] flex flex-col max-h-[95%] items-center justify-center">
-          <Tabs
-            aria-label="Options"
-            className="w-full "
-            onSelectionChange={() => {
-              if (!panelOpen) {
-                setPanelOpen(true);
-              }
-            }}
-          >
-            <Tab
-              key="positions"
-              title="Positions"
-              className="w-full h-full flex"
+      <div className="flex flex-col  max-h-full min-h-full h-full w-full rounded-lg align-middle items-center justify-center">
+        <div className="flex flex-row w-full h-full">
+          <div className="w-full h-[95%] flex flex-col max-h-[95%] items-center justify-center">
+            <Tabs
+              aria-label="Options"
+              className="w-full h-full max-x-full "
+              defaultValue="positions"
             >
-              {panelOpen && (
-                <div className="w-full h-full overflow-hidden ">
-                  {!fetchingPositions ? (
-                    <PositionsTable
-                      orders={orders}
-                      setOrders={setOrders}
-                      history={history}
-                      setHistory={setHistory}
-                      currentPrice={currentPrice}
-                      saveSessionData={saveSessionData}
-                      isHistory={false}
-                      accountSize={accountSize}
-                      lineSeries={lineSeries}
-                      priceLines={priceLines}
-                      setPriceLines={setPriceLines}
-                    />
-                  ) : (
-                    <div
-                      className="min-w-full flex flex-col items-center
-                      justify-center"
-                    >
-                      <p>Loading Positions...</p>
-                      <div className="border-4 border-t-transparent border-grey-500 w-4 h-4 rounded-full animate-spin"></div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </Tab>
-            <Tab key="History" title="History" className="w-full h-full flex">
-              {panelOpen && (
-                <div className="w-full h-full  ">
-                  {!fetchingPositions ? (
-                    <HistoryTable
-                      history={history}
-                      setHistory={setHistory}
-                      currentPrice={currentPrice}
-                      saveSessionData={saveSessionData}
-                      isHistory={true}
-                    />
-                  ) : (
-                    <div
-                      className="min-w-full flex flex-col items-center
-                      justify-center"
-                    >
-                      <p>Loading Positions...</p>
-                      <div className="border-4 border-t-transparent border-grey-500 w-4 h-4 rounded-full animate-spin"></div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </Tab>
-          </Tabs>
-        </div>
-        <div
-          className={`w-auto h-[95%] flex ${
-            panelOpen ? "items-start" : "items-center"
-          } ${theme === "light" ? "invert" : "invert-0"}`}
-        >
-          <Image
-            src={panelOpen ? CloseFullScreen : OpenFullScreen}
-            alt="Arrow Left"
-            width={24}
-            height={24}
-            onClick={() => {
-              setPanelOpen(!panelOpen);
-            }}
-            className="cursor-pointer"
-          />
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="positions">Positions</TabsTrigger>
+                <TabsTrigger value="history">History</TabsTrigger>
+              </TabsList>
+              <TabsContent value="positions" className="max-h-full">
+                {panelOpen && (
+                  <div className="w-full h-full  ">
+                    {!fetchingPositions ? (
+                      <PositionsTable
+                        orders={orders}
+                        setOrders={setOrders}
+                        history={history}
+                        setHistory={setHistory}
+                        currentPrice={currentPrice}
+                        saveSessionData={saveSessionData}
+                        isHistory={false}
+                        accountSize={accountSize}
+                        lineSeries={lineSeries}
+                        priceLines={priceLines}
+                        setPriceLines={setPriceLines}
+                        currentCandleDate={currentCandleDate}
+                      />
+                    ) : (
+                      <div
+                        className="min-w-full flex flex-col items-center
+                        justify-center"
+                      >
+                        <p>Loading Positions...</p>
+                        <div className="border-4 border-t-transparent border-grey-500 w-4 h-4 rounded-full animate-spin"></div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </TabsContent>
+              <TabsContent
+                value="history"
+                className="max-h-[80%] overflow-y-scroll"
+              >
+                {panelOpen && (
+                  <div className="w-full ">
+                    {!fetchingPositions ? (
+                      <HistoryTable
+                        history={history}
+                        setHistory={setHistory}
+                        currentPrice={currentPrice}
+                        saveSessionData={saveSessionData}
+                        isHistory={true}
+                      />
+                    ) : (
+                      <div
+                        className="min-w-full flex flex-col items-center
+                        justify-center"
+                      >
+                        <p>Loading Positions...</p>
+                        <div className="border-4 border-t-transparent border-grey-500 w-4 h-4 rounded-full animate-spin"></div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+          </div>
         </div>
       </div>
     )

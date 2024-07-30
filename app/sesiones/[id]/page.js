@@ -1,11 +1,15 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
 import { useParams } from "next/navigation"; // Importar useParams
 import PositionCreator from "@/components/PositionCreator";
-import { Button } from "@nextui-org/button";
+import { Button } from "@/components/ui/button";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
+
 import "@/app/globals.css";
 
 import { Modal, ModalContent, ModalHeader, ModalBody } from "@nextui-org/modal";
@@ -17,7 +21,6 @@ import localforage from "localforage";
 import moment from "moment-timezone";
 import ChartComponent from "@/components/Sesiones/ChartComponent";
 import ChartPlayer from "@/components/Sesiones/ChartPlayer";
-import Split from "react-split";
 
 export default function SessionPage() {
   const { id } = useParams(); // Usar useParams para obtener el id
@@ -200,7 +203,7 @@ export default function SessionPage() {
    * @param {number} index - The index to generate the candles up to.
    * @return {Array} An array of candles.
    */
-  const getFinalCandles = (index) => {
+  const getFinalCandles = (index, weekend = false) => {
     // If initialData is empty or undefined, return early
     if (!initialData || initialData.length === 0) {
       return;
@@ -208,6 +211,7 @@ export default function SessionPage() {
 
     var candles = []; // Array to store the generated candles
     var candle = {}; // Object to store the current candle
+
     var localUpdateCount = 0; // Keep track of the current candle index
 
     // Generate candles up to the given index
@@ -216,6 +220,13 @@ export default function SessionPage() {
       const dataPoint = initialData[baseIndex]; // Get the data point for the current candle
       var currentMinute;
       var previousMinute;
+
+      const currentDate = new Date(dataPoint.timestamp);
+      const dayOfWeek = currentDate.getUTCDay(); // Get the day of the week (0: Sunday, 6: Saturday)
+      if (dayOfWeek === 0 || dayOfWeek === 6) {
+        localUpdateCount++;
+        continue; // Skip weekends
+      }
       if (timeframe === "1h" || timeframe === "4h") {
         currentMinute = new Date(dataPoint.timestamp).getHours();
         previousMinute =
@@ -254,9 +265,9 @@ export default function SessionPage() {
           candle = {
             time: new Date(dataPoint.timestamp).getTime() / 1000,
             open: openPrice,
-            high: openPrice,
-            low: openPrice,
-            close: openPrice,
+            high: dataPoint.high,
+            low: dataPoint.low,
+            close: dataPoint.close,
           };
           localUpdateCount++; // Increment the localUpdateCount
         } else {
@@ -264,9 +275,9 @@ export default function SessionPage() {
           candle = {
             time: new Date(dataPoint.timestamp).getTime() / 1000,
             open: openPrice,
-            high: openPrice,
-            low: openPrice,
-            close: openPrice,
+            high: dataPoint.high,
+            low: dataPoint.low,
+            close: dataPoint.close,
           };
           localUpdateCount++; // Increment the localUpdateCount
         }
@@ -288,11 +299,11 @@ export default function SessionPage() {
         localUpdateCount++; // Increment the localUpdateCount
       }
     }
-
     // Update the global update count and current candle
     setUpdateCount(localUpdateCount);
     setCurrentCandle(candle);
     setCandleIndex(index);
+    setAllCandles(candles);
 
     // If all candles have been generated, set the finish modal and update the flags
     if (localUpdateCount == initialData.length - 1) {
@@ -302,9 +313,32 @@ export default function SessionPage() {
       setIsPaused(true);
     }
 
-    setAllCandles(candles);
     // Return the generated candles
     return candles;
+  };
+
+  const passWeekends = () => {
+    console.log("Estoy aqui");
+    setIsPaused(true);
+    var dayOfWeek = -1; // Variable to store the day of the week
+
+    var localUpdateCount = updateCount;
+    while (dayOfWeek === -1 || dayOfWeek === 0 || dayOfWeek === 6) {
+      console.log("Estoy aqui");
+
+      const baseIndex = localUpdateCount; // Get the base index for the current candle
+      const dataPoint = initialData[baseIndex]; // Get the data point for the current candle
+
+      const currentDate = new Date(dataPoint.timestamp);
+      dayOfWeek = currentDate.getUTCDay(); // Get the day of the week (0: Sunday, 6: Saturday)
+      if (dayOfWeek === 0 || dayOfWeek === 6) {
+        localUpdateCount++;
+      }
+    }
+    // Update the global update count and current candle
+    setUpdateCount(localUpdateCount);
+    setCandleIndex(localUpdateCount);
+    setIsPaused(false);
   };
 
   /**
@@ -341,61 +375,67 @@ export default function SessionPage() {
     const dataPoint = initialData[baseIndex];
 
     var currentMinute, previousMinute;
-
-    if (timeframe === "1h" || timeframe === "4h") {
-      currentMinute = new Date(dataPoint.timestamp).getHours();
-      previousMinute =
-        baseIndex != 0
-          ? new Date(initialData[baseIndex - 1].timestamp).getHours()
-          : -1; // Get the previous minute of the data point
-    } else if (timeframe === "1d") {
-      currentMinute = new Date(dataPoint.timestamp).getDay();
-      previousMinute =
-        baseIndex != 0
-          ? new Date(initialData[baseIndex - 1].timestamp).getDay()
-          : -1; // Get the previous minute of the data point
+    const currentDate = new Date(dataPoint.timestamp);
+    const dayOfWeek = currentDate.getUTCDay(); // Get the day of the week (0: Sunday, 6: Saturday)
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      setIsPaused(true);
+      passWeekends();
     } else {
-      currentMinute = new Date(dataPoint.timestamp).getMinutes(); // Get the current minute of the data point
-      previousMinute =
-        baseIndex != 0
-          ? new Date(initialData[baseIndex - 1].timestamp).getMinutes()
-          : -1; // Get the previous minute of the data point
-    }
+      if (timeframe === "1h" || timeframe === "4h") {
+        currentMinute = new Date(dataPoint.timestamp).getHours();
+        previousMinute =
+          baseIndex != 0
+            ? new Date(initialData[baseIndex - 1].timestamp).getHours()
+            : -1; // Get the previous minute of the data point
+      } else if (timeframe === "1d") {
+        currentMinute = new Date(dataPoint.timestamp).getDay();
+        previousMinute =
+          baseIndex != 0
+            ? new Date(initialData[baseIndex - 1].timestamp).getDay()
+            : -1; // Get the previous minute of the data point
+      } else {
+        currentMinute = new Date(dataPoint.timestamp).getMinutes(); // Get the current minute of the data point
+        previousMinute =
+          baseIndex != 0
+            ? new Date(initialData[baseIndex - 1].timestamp).getMinutes()
+            : -1; // Get the previous minute of the data point
+      }
 
-    if (currentMinute !== previousMinute) {
-      // Ensure that the new candle starts exactly where the previous one ended
-      const openPrice =
-        baseIndex !== 0 ? initialData[baseIndex - 1].close : dataPoint.open; // The open price is the close price of the previous candle
-      const newCandle = {
-        time: new Date(dataPoint.timestamp).getTime() / 1000,
+      if (currentMinute !== previousMinute) {
+        // Ensure that the new candle starts exactly where the previous one ended
+        const openPrice =
+          baseIndex !== 0 ? initialData[baseIndex - 1].close : dataPoint.open; // The open price is the close price of the previous candle
+        const newCandle = {
+          time: new Date(dataPoint.timestamp).getTime() / 1000,
 
-        open: openPrice,
-        high: dataPoint.high,
-        low: dataPoint.low,
-        close: dataPoint.close,
-      };
-      seriesRef.current.update(newCandle);
-      setCurrentCandle(newCandle);
-      setCurrentPrice(newCandle.close);
-      setUpdateCount(updateCount + 1);
-      setCandleIndex(candleIndex + 1);
-      setAllCandles((prevCandles) => [...prevCandles, newCandle]);
-    } else {
-      const updatedCandle = {
-        ...currentCandle,
-        close: dataPoint.close,
-        high: Math.max(currentCandle.high, dataPoint.close),
-        low: Math.min(currentCandle.low, dataPoint.close),
-      };
-      seriesRef.current.update(updatedCandle);
-      setCurrentCandle(updatedCandle);
-      setCurrentPrice(updatedCandle.close);
-      setUpdateCount(updateCount + 1);
-      setAllCandles((prevCandles) =>
-        prevCandles.map((candle, index) =>
-          index === prevCandles.length - 1 ? updatedCandle : candle,
-        ),
-      );
+          open: openPrice,
+          high: dataPoint.high,
+          low: dataPoint.low,
+          close: dataPoint.close,
+        };
+        seriesRef.current.update(newCandle);
+        setCurrentCandle(newCandle);
+        setCurrentPrice(newCandle.close);
+        setUpdateCount(updateCount + 1);
+        setCandleIndex(candleIndex + 1);
+        setAllCandles((prevCandles) => [...prevCandles, newCandle]);
+      } else {
+        const updatedCandle = {
+          ...currentCandle,
+          close: dataPoint.close,
+          high: Math.max(currentCandle.high, dataPoint.close),
+          low: Math.min(currentCandle.low, dataPoint.close),
+        };
+        seriesRef.current.update(updatedCandle);
+        setCurrentCandle(updatedCandle);
+        setCurrentPrice(updatedCandle.close);
+        setUpdateCount(updateCount + 1);
+        setAllCandles((prevCandles) =>
+          prevCandles.map((candle, index) =>
+            index === prevCandles.length - 1 ? updatedCandle : candle,
+          ),
+        );
+      }
     }
 
     if (
@@ -619,8 +659,6 @@ export default function SessionPage() {
       draggable: true,
     };
 
-    console.log(entryPriceLine, tpLine, slLine);
-
     const finalPriceLine = lineSeries.createPriceLine(entryPriceLine);
     const finalTpLine = lineSeries.createPriceLine(tpLine);
     const finalSlLine = lineSeries.createPriceLine(slLine);
@@ -629,91 +667,80 @@ export default function SessionPage() {
   };
   return (
     <div className="flex flex-col min-h-[100%] min-w-full p-4 border-2 rounded-lg">
-      <Split
-        direction="vertical"
-        sizes={panelOpen ? [69, 30] : [92, 5]} // Ajusta los tamaños según tu preferencia
-        minSize={[600, 50]} // Tamaños mínimos del gráfico y el panel
-        expandToMin={false}
-        gutterSize={6}
-        gutterAlign="center"
-        snapOffset={0}
-        dragInterval={1}
-        className="flex flex-col w-full h-full justify-between"
-        onDrag={(sizes) => handleResize(sizes, "vertical")}
-      >
-        <Split
-          direction="horizontal"
-          sizes={positionCreatorOpen ? [69, 30] : [94, 3]} // Ajusta los tamaños según tu preferencia
-          minSize={[1000, 100]} // Tamaños mínimos del gráfico y el panel
-          expandToMin={false}
-          gutterSize={4}
-          gutterAlign="right"
-          snapOffset={6}
-          dragInterval={1}
-          className="flex flex-row w-full h-full justify-between"
-          onDrag={(sizes) => handleResize(sizes, "horizontal")}
-        >
-          <div className="flex flex-col w-full h-full ">
-            <ChartComponent
-              isLoading={isLoading}
-              chartContainerRef={chartContainerRef}
-              chartRef={chartRef}
-              seriesRef={seriesRef}
+      <ResizablePanelGroup direction="vertical">
+        <ResizablePanel defaultSize={80} minSize={60}>
+          <ResizablePanelGroup direction="horizontal">
+            <ResizablePanel defaultSize={68} minSize={68}>
+              <div className="flex flex-col w-full h-full pb-4 pr-4">
+                <ChartComponent
+                  isLoading={isLoading}
+                  chartContainerRef={chartContainerRef}
+                  chartRef={chartRef}
+                  seriesRef={seriesRef}
+                  lineSeries={lineSeries}
+                  setLineSeries={setLineSeries}
+                  markers={markers}
+                  timeZone={timeZone}
+                  theme={theme}
+                  priceLines={priceLines}
+                  setPriceLines={setPriceLines}
+                  orders={orders}
+                  setOrders={setOrders}
+                />
+                <ChartPlayer
+                  isPaused={isPaused}
+                  togglePause={togglePause}
+                  candlePerSecond={candlePerSecond}
+                  setCandlePerSecond={setCandlePerSecond}
+                  saveSessionData={saveSessionData}
+                  timeZones={timeZones}
+                  timeZone={timeZone}
+                  setTimeZone={setTimeZone}
+                  theme={theme}
+                />
+              </div>
+            </ResizablePanel>
+            <ResizableHandle />
+            <ResizablePanel defaultSize={30} minSize={11} collapsible={true}>
+              <div className="flex border-2 rounded-lg w-full h-full">
+                <PositionCreator
+                  currentPrice={currentPrice}
+                  currentBalance={currentBalance}
+                  saveSessionData={saveSessionData}
+                  sessionId={id}
+                  orders={orders}
+                  setOrders={setOrders}
+                  markers={markers}
+                  setMarkers={setMarkers}
+                  currentCandleDate={currentCandle.time}
+                  addPriceLines={addPriceLines}
+                  pair={pair}
+                />
+              </div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        </ResizablePanel>
+        <ResizableHandle />
+        <ResizablePanel defaultSize={20} minSize={8}>
+          <div className="w-full h-full border-2 rounded-lg p-4">
+            <PositionPanel
+              panelOpen={panelOpen}
+              setPanelOpen={setPanelOpen}
+              sessionId={id}
+              currentPrice={currentPrice}
+              orders={orders}
+              setOrders={setOrders}
+              saveSessionData={saveSessionData}
+              accountSize={accountSize}
               lineSeries={lineSeries}
-              setLineSeries={setLineSeries}
-              markers={markers}
-              timeZone={timeZone}
-              theme={theme}
               priceLines={priceLines}
               setPriceLines={setPriceLines}
-              orders={orders}
-              setOrders={setOrders}
-            />
-            <ChartPlayer
-              isPaused={isPaused}
-              togglePause={togglePause}
-              candlePerSecond={candlePerSecond}
-              setCandlePerSecond={setCandlePerSecond}
-              saveSessionData={saveSessionData}
-              timeZones={timeZones}
-              timeZone={timeZone}
-              setTimeZone={setTimeZone}
-              theme={theme}
-            />
-          </div>
-          <div className="w-[30%] border-2 rounded-lg">
-            <PositionCreator
-              currentPrice={currentPrice}
-              currentBalance={currentBalance}
-              saveSessionData={saveSessionData}
-              sessionId={id}
-              orders={orders}
-              setOrders={setOrders}
-              markers={markers}
-              setMarkers={setMarkers}
-              currentCandleDate={currentCandle.time}
               addPriceLines={addPriceLines}
+              currentCandleDate={currentCandle.time}
             />
           </div>
-        </Split>
-
-        <div className="w-full h-full border-2 rounded-lg">
-          <PositionPanel
-            panelOpen={panelOpen}
-            setPanelOpen={setPanelOpen}
-            sessionId={id}
-            currentPrice={currentPrice}
-            orders={orders}
-            setOrders={setOrders}
-            saveSessionData={saveSessionData}
-            accountSize={accountSize}
-            lineSeries={lineSeries}
-            priceLines={priceLines}
-            setPriceLines={setPriceLines}
-            addPriceLines={addPriceLines}
-          />
-        </div>
-      </Split>
+        </ResizablePanel>
+      </ResizablePanelGroup>
       <Modal
         isOpen={isLoading}
         onOpenChange={setIsLoading}

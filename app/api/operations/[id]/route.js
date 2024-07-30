@@ -37,6 +37,7 @@ export async function PUT(req, { params }) {
           profit: order.profit,
           tp: parseFloat(order.tp),
           sl: parseFloat(order.sl),
+          exitDate: new Date(order.exitDate * 1000),
         },
       });
     }

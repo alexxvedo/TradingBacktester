@@ -1,13 +1,24 @@
-import {
+/*import {
   Table,
   TableHeader,
   TableRow,
   TableColumn,
   TableBody,
   TableCell,
-} from "@nextui-org/table";
+} from "@nextui-org/table";*/
 
-import { Button } from "@nextui-org/button";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
+//import { Button } from "@nextui-org/button";
+import { Button } from "@/components/ui/button";
 
 export default function HistoryTable({
   history,
@@ -18,21 +29,22 @@ export default function HistoryTable({
   return (
     <Table aria-label="Position Table" className="h-full max-h-full">
       <TableHeader>
-        <TableColumn>Date</TableColumn>
-        <TableColumn>Type</TableColumn>
-        <TableColumn>Entry Price</TableColumn>
-        <TableColumn>Close Price</TableColumn>
-        <TableColumn>Quantity</TableColumn>
-        <TableColumn>Result</TableColumn>
+        <TableRow>
+          <TableHead>Date</TableHead>
+          <TableHead>Type</TableHead>
+          <TableHead>Entry Price</TableHead>
+          <TableHead>Close Price</TableHead>
+          <TableHead>Quantity</TableHead>
+          <TableHead>Result</TableHead>
+        </TableRow>
       </TableHeader>
       {history != undefined && history.length != 0 ? (
         <TableBody className="max-h-full">
           {history.map((order, index) => {
-            console.log(order);
             return (
               <TableRow key={index}>
                 <TableCell>
-                  {new Date(order.createdAt).toLocaleString()}
+                  {`${new Date(order.exitDate).toLocaleDateString()}, ${new Date(order.exitDate).toLocaleTimeString()}`}
                 </TableCell>
                 <TableCell>{order.type.toUpperCase()}</TableCell>
                 <TableCell>{order.entryPrice.toFixed(5)}</TableCell>
