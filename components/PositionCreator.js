@@ -21,19 +21,19 @@ export default function PositionCreator({
   addPriceLines,
   pair,
 }) {
-  const [orderSize, setOrderSize] = useState();
+  const [orderSize, setOrderSize] = useState("");
   const [limitPrice, setLimitPrice] = useState();
   const [ticks, setTicks] = useState("Ask + 10");
   const [stopLoss, setStopLoss] = useState(false);
   const [takeProfit, setTakeProfit] = useState(false);
-  const [stopLossValue, setStopLossValue] = useState();
-  const [stopLossPrice, setStopLossPrice] = useState();
-  const [stopLossAmount, setStopLossAmount] = useState();
-  const [stopLossPercentage, setStopLossPercentage] = useState();
-  const [takeProfitValue, setTakeProfitValue] = useState();
-  const [takeProfitPrice, setTakeProfitPrice] = useState();
-  const [takeProfitAmount, setTakeProfitAmount] = useState();
-  const [takeProfitPercentage, setTakeProfitPercentage] = useState();
+  const [stopLossValue, setStopLossValue] = useState("");
+  const [stopLossPrice, setStopLossPrice] = useState("");
+  const [stopLossAmount, setStopLossAmount] = useState("");
+  const [stopLossPercentage, setStopLossPercentage] = useState("");
+  const [takeProfitValue, setTakeProfitValue] = useState("");
+  const [takeProfitPrice, setTakeProfitPrice] = useState("");
+  const [takeProfitAmount, setTakeProfitAmount] = useState("");
+  const [takeProfitPercentage, setTakeProfitPercentage] = useState("");
   const [previousPrice, setPreviousPrice] = useState(0);
   const [priceColors, setPriceColors] = useState([]);
   const [positionType, setPositionType] = useState("BUY");
@@ -149,7 +149,6 @@ export default function PositionCreator({
     elementChanged,
     valueElementChanged,
   ) => {
-    const pipValue = 0.0001;
     const orderSizeInUnits =
       elementChanged !== "orderSize"
         ? orderSize * 100000
@@ -337,22 +336,27 @@ export default function PositionCreator({
                 </lable>
                 <Input
                   htmlFor="orderSize"
-                  value={orderSize}
+                  value={orderSize || ""}
                   label="Lots"
-                  type="number"
+                  type="text"
                   className=""
                   onChange={(e) => {
-                    const regex = /^\d*(\.\d{0,2})?$/;
-                    const validated = regex.test(e.target.value)
-                      ? e.target.value
-                      : e.target.value.slice(0, -1);
-                    setOrderSize(validated);
-                    calculateTpSl(
-                      currentPrice,
-                      positionType,
-                      "orderSize",
-                      validated,
-                    );
+                    if (e.target.value === "") {
+                      setStopLossValue("");
+                      return;
+                    } else {
+                      const regex = /^-?\d*(\.\d{0,2})?$/;
+                      const validated = regex.test(e.target.value)
+                        ? e.target.value
+                        : e.target.value.slice(0, -1);
+                      setOrderSize(validated);
+                      calculateTpSl(
+                        currentPrice,
+                        positionType,
+                        "orderSize",
+                        validated,
+                      );
+                    }
                   }}
                 />
               </div>
@@ -376,23 +380,29 @@ export default function PositionCreator({
                   <Input
                     htmlFor="stopLossValue"
                     disabled={!stopLoss}
-                    value={stopLossValue}
+                    value={stopLossValue || ""}
                     onChange={(e) => {
-                      const regex = /^\d*(\.\d{0,2})?$/;
-                      const validated = regex.test(e.target.value)
-                        ? e.target.value
-                        : e.target.value.slice(0, -1);
-                      setStopLossValue(validated);
+                      if (e.target.value === "") {
+                        setStopLossValue("");
+                        return;
+                      } else {
+                        const regex = /^-?\d*(\.\d{0,2})?$/;
 
-                      calculateTpSl(
-                        currentPrice,
-                        positionType,
-                        "stopLossValue",
-                        validated,
-                      );
+                        const validated = regex.test(e.target.value)
+                          ? e.target.value
+                          : e.target.value.slice(0, -1);
+                        setStopLossValue(validated);
+
+                        calculateTpSl(
+                          currentPrice,
+                          positionType,
+                          "stopLossValue",
+                          validated,
+                        );
+                      }
                     }}
                     label="Pips"
-                    type="number"
+                    type="text"
                     variant="bordered"
                     size="sm"
                   />
@@ -407,22 +417,28 @@ export default function PositionCreator({
                   <Input
                     htmlFor="stopLossPrice"
                     disabled={!stopLoss}
-                    value={stopLossPrice}
+                    value={stopLossPrice || ""}
                     onChange={(e) => {
-                      const regex = /^\d*(\.\d{0,5})?$/;
-                      const validated = regex.test(e.target.value)
-                        ? e.target.value
-                        : e.target.value.slice(0, -1);
-                      setStopLossPrice(validated);
-                      calculateTpSl(
-                        currentPrice,
-                        positionType,
-                        "stopLossPrice",
-                        validated,
-                      );
+                      if (e.target.value === "") {
+                        setStopLossPrice("");
+                        return;
+                      } else {
+                        const regex = /^-?\d*(\.\d{0,2})?$/;
+
+                        const validated = regex.test(e.target.value)
+                          ? e.target.value
+                          : e.target.value.slice(0, -1);
+                        setStopLossPrice(validated);
+                        calculateTpSl(
+                          currentPrice,
+                          positionType,
+                          "stopLossPrice",
+                          validated,
+                        );
+                      }
                     }}
                     label="Price"
-                    type="number"
+                    type="text"
                     variant="bordered"
                     size="sm"
                   />
@@ -437,22 +453,28 @@ export default function PositionCreator({
                   <Input
                     htmlFor="stopLossAmount"
                     disabled={!stopLoss}
-                    value={stopLossAmount}
+                    value={stopLossAmount || ""}
                     onChange={(e) => {
-                      const regex = /^\d*(\.\d{0,2})?$/;
-                      const validated = regex.test(e.target.value)
-                        ? e.target.value
-                        : e.target.value.slice(0, -1);
-                      setStopLossAmount(validated);
-                      calculateTpSl(
-                        currentPrice,
-                        positionType,
-                        "stopLossAmount",
-                        validated,
-                      );
+                      if (e.target.value === "") {
+                        setStopLossAmount("");
+                        return;
+                      } else {
+                        const regex = /^-?\d*(\.\d{0,2})?$/;
+
+                        const validated = regex.test(e.target.value)
+                          ? e.target.value
+                          : e.target.value.slice(0, -1);
+                        setStopLossAmount(validated);
+                        calculateTpSl(
+                          currentPrice,
+                          positionType,
+                          "stopLossAmount",
+                          validated,
+                        );
+                      }
                     }}
                     label="$"
-                    type="number"
+                    type="text"
                     variant="bordered"
                     size="sm"
                   />
@@ -467,22 +489,28 @@ export default function PositionCreator({
                   <Input
                     htmlFor="stopLossPercentage"
                     disabled={!stopLoss}
-                    value={stopLossPercentage}
+                    value={stopLossPercentage || ""}
                     onChange={(e) => {
-                      const regex = /^\d*(\.\d{0,2})?$/;
-                      const validated = regex.test(e.target.value)
-                        ? e.target.value
-                        : e.target.value.slice(0, -1);
-                      setStopLossPercentage(validated);
-                      calculateTpSl(
-                        currentPrice,
-                        positionType,
-                        "stopLossPercentage",
-                        validated,
-                      );
+                      if (e.target.value === "") {
+                        setStopLossPercentage("");
+                        return;
+                      } else {
+                        const regex = /^-?\d*(\.\d{0,2})?$/;
+
+                        const validated = regex.test(e.target.value)
+                          ? e.target.value
+                          : e.target.value.slice(0, -1);
+                        setStopLossPercentage(validated);
+                        calculateTpSl(
+                          currentPrice,
+                          positionType,
+                          "stopLossPercentage",
+                          validated,
+                        );
+                      }
                     }}
                     label="%"
-                    type="number"
+                    type="text"
                     variant="bordered"
                     size="sm"
                   />
@@ -506,15 +534,20 @@ export default function PositionCreator({
                   <Input
                     htmlFor="takeProfitValue"
                     disabled={!takeProfit}
-                    value={takeProfitValue}
+                    value={takeProfitValue || ""}
                     onChange={(e) => {
-                      setTakeProfitValue(e.target.value);
-                      calculateTpSl(
-                        currentPrice,
-                        positionType,
-                        "takeProfitValue",
-                        e.target.value,
-                      );
+                      if (e.target.value === "") {
+                        setTakeProfitValue("");
+                        return;
+                      } else {
+                        setTakeProfitValue(e.target.value);
+                        calculateTpSl(
+                          currentPrice,
+                          positionType,
+                          "takeProfitValue",
+                          e.target.value,
+                        );
+                      }
                     }}
                     label="Pips"
                     type="number"
@@ -532,17 +565,25 @@ export default function PositionCreator({
                   <Input
                     htmlFor="takeProfitPrice"
                     disabled={!takeProfit}
-                    value={takeProfitPrice}
+                    value={takeProfitPrice || ""}
                     onChange={(e) => {
-                      var value = e.target.value;
-                      setTakeProfitPrice(e.target.value);
-                      if (!isNaN(parseFloat(e.target.value)) && value !== "-") {
-                        calculateTpSl(
-                          currentPrice,
-                          positionType,
-                          "takeProfitPrice",
-                          value,
-                        );
+                      if (e.target.value === "") {
+                        setTakeProfitPrice("");
+                        return;
+                      } else {
+                        var value = e.target.value;
+                        setTakeProfitPrice(e.target.value);
+                        if (
+                          !isNaN(parseFloat(e.target.value)) &&
+                          value !== "-"
+                        ) {
+                          calculateTpSl(
+                            currentPrice,
+                            positionType,
+                            "takeProfitPrice",
+                            value,
+                          );
+                        }
                       }
                     }}
                     label="Price"
@@ -561,18 +602,23 @@ export default function PositionCreator({
                   <Input
                     htmlFor="takeProfitAmount"
                     disabled={!takeProfit}
-                    value={takeProfitAmount}
+                    value={takeProfitAmount || ""}
                     onChange={(e) => {
-                      const value = e.target.value;
-                      if (/^-?\d*\.?\d*$/.test(value)) {
-                        setTakeProfitAmount(value);
-                        if (!isNaN(parseFloat(value))) {
-                          calculateTpSl(
-                            currentPrice,
-                            positionType,
-                            "takeProfitAmount",
-                            parseFloat(value),
-                          );
+                      if (e.target.value === "") {
+                        setTakeProfitAmount("");
+                        return;
+                      } else {
+                        const value = e.target.value;
+                        if (/^-?\d*\.?\d*$/.test(value)) {
+                          setTakeProfitAmount(value);
+                          if (!isNaN(parseFloat(value))) {
+                            calculateTpSl(
+                              currentPrice,
+                              positionType,
+                              "takeProfitAmount",
+                              parseFloat(value),
+                            );
+                          }
                         }
                       }
                     }}
@@ -592,15 +638,20 @@ export default function PositionCreator({
                   <Input
                     htmlFor="takeProfitPercentage"
                     disabled={!takeProfit}
-                    value={takeProfitPercentage}
+                    value={takeProfitPercentage || ""}
                     onChange={(e) => {
-                      setTakeProfitPercentage(e.target.value);
-                      calculateTpSl(
-                        currentPrice,
-                        positionType,
-                        "takeProfitPercentage",
-                        e.target.value,
-                      );
+                      if (e.target.value === "") {
+                        setTakeProfitPercentage("");
+                        return;
+                      } else {
+                        setTakeProfitPercentage(e.target.value);
+                        calculateTpSl(
+                          currentPrice,
+                          positionType,
+                          "takeProfitPercentage",
+                          e.target.value,
+                        );
+                      }
                     }}
                     label="%"
                     type="number"

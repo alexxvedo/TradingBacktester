@@ -1,16 +1,3 @@
-const pipValues = {
-  EURUSD: 0.0001,
-  USDJPY: 0.01,
-  GBPUSD: 0.0001,
-  AUDUSD: 0.0001,
-  USDCHF: 0.0001,
-  EURJPY: 0.01,
-  EURGBP: 0.0001,
-  EURCHF: 0.0001,
-  NZDUSD: 0.0001,
-  // Agrega más pares de divisas según sea necesario
-};
-
 const pipCalculator = (
   currentPrice,
   positionSize,
@@ -20,14 +7,24 @@ const pipCalculator = (
   pair,
   existingValues,
 ) => {
-  const pipValue = pipValues[pair];
+  const calculatePipValue = (pair, price) => {
+    if (pair.endsWith("JPY")) {
+      return (0.01 / price) * 100000;
+    } else {
+      return (0.0001 / price) * 100000;
+    }
+  };
+
+  const pipValue = calculatePipValue(pair, currentPrice);
+  const lotSize = 100000; // Estándar para calcular el valor del pip
+  const convertedPositionSize = positionSize / lotSize; // Convertir a tamaño de lote estándar
   let result = {};
 
   console.log(
     "currentPrice",
     currentPrice,
     ", positionSize",
-    positionSize,
+    convertedPositionSize,
     ", elementChanged",
     elementChanged,
     ", elementChangedValue",
@@ -40,125 +37,138 @@ const pipCalculator = (
     existingValues,
   );
 
+  const calculateAmount = (pipDifference) =>
+    Math.abs(pipDifference * convertedPositionSize * pipValue);
+  const calculatePercentage = (amount) =>
+    Math.abs((amount / (currentPrice * convertedPositionSize * lotSize)) * 100);
+
   switch (elementChanged) {
     case "stopLossValue":
-      const stopLossPriceChange = elementChangedValue * pipValue * -1;
+      const stopLossPriceChange = (elementChangedValue * pipValue) / 100000;
       result.stopLossValue = elementChangedValue;
       result.stopLossPrice =
-        positionType === "buy"
+        positionType === "BUY"
           ? currentPrice - stopLossPriceChange
           : currentPrice + stopLossPriceChange;
-      result.stopLossAmount = elementChangedValue * positionSize * pipValue;
-      result.stopLossPercentage =
-        (result.stopLossAmount / (currentPrice * positionSize)) * 100;
+      result.stopLossAmount = calculateAmount(elementChangedValue);
+      result.stopLossPercentage = calculatePercentage(result.stopLossAmount);
       break;
 
     case "stopLossPrice":
       const priceDifferenceSL =
-        positionType === "buy"
+        positionType === "BUY"
           ? currentPrice - elementChangedValue
           : elementChangedValue - currentPrice;
-      result.stopLossValue = priceDifferenceSL / pipValue;
+      result.stopLossValue = Math.abs((priceDifferenceSL / pipValue) * 100000);
       result.stopLossPrice = elementChangedValue;
-
-      result.stopLossAmount = result.stopLossValue * positionSize * pipValue;
-      result.stopLossPercentage =
-        (result.stopLossAmount / (currentPrice * positionSize)) * 100;
+      result.stopLossAmount = calculateAmount(result.stopLossValue);
+      result.stopLossPercentage = calculatePercentage(result.stopLossAmount);
       break;
 
     case "stopLossAmount":
-      result.stopLossValue = elementChangedValue / (positionSize * pipValue);
-      const priceChangeSL = result.stopLossValue * pipValue;
+      result.stopLossAmount = Math.abs(elementChangedValue);
+      result.stopLossValue = Math.abs(
+        elementChangedValue / (convertedPositionSize * pipValue),
+      );
+      const stopLossPriceChangeAmount =
+        (result.stopLossValue * pipValue) / 100000;
       result.stopLossPrice =
-        positionType === "buy"
-          ? currentPrice - priceChangeSL
-          : currentPrice + priceChangeSL;
-      result.stopLossAmount = elementChangedValue;
-
-      result.stopLossPercentage =
-        (elementChangedValue / (currentPrice * positionSize)) * 100;
+        positionType === "BUY"
+          ? currentPrice - stopLossPriceChangeAmount
+          : currentPrice + stopLossPriceChangeAmount;
+      result.stopLossPercentage = calculatePercentage(elementChangedValue);
       break;
 
     case "stopLossPercentage":
-      const amountLoss =
-        (elementChangedValue / 100) * (currentPrice * positionSize);
-      result.stopLossAmount = amountLoss;
-      result.stopLossValue = amountLoss / (positionSize * pipValue);
-      const slPriceChange = result.stopLossValue * pipValue;
+      const stopLossAmountFromPercentage =
+        (elementChangedValue / 100) *
+        (currentPrice * convertedPositionSize * lotSize);
+      result.stopLossAmount = Math.abs(stopLossAmountFromPercentage);
+      result.stopLossValue = Math.abs(
+        stopLossAmountFromPercentage /
+          (convertedPositionSize * lotSize * pipValue),
+      );
+      const stopLossPriceChangePercentage =
+        (result.stopLossValue * pipValue) / 100000;
       result.stopLossPrice =
-        positionType === "buy"
-          ? currentPrice - slPriceChange
-          : currentPrice + slPriceChange;
+        positionType === "BUY"
+          ? currentPrice - stopLossPriceChangePercentage
+          : currentPrice + stopLossPriceChangePercentage;
       result.stopLossPercentage = elementChangedValue;
-
       break;
 
     case "takeProfitValue":
-      const takeProfitPriceChange = elementChangedValue * pipValue;
+      const takeProfitPriceChange = (elementChangedValue * pipValue) / 100000;
       result.takeProfitValue = elementChangedValue;
-
       result.takeProfitPrice =
-        positionType === "buy"
+        positionType === "BUY"
           ? currentPrice + takeProfitPriceChange
           : currentPrice - takeProfitPriceChange;
-      result.takeProfitAmount = elementChangedValue * positionSize * pipValue;
-      result.takeProfitPercentage =
-        (result.takeProfitAmount / (currentPrice * positionSize)) * 100;
+      result.takeProfitAmount = calculateAmount(elementChangedValue);
+      result.takeProfitPercentage = calculatePercentage(
+        result.takeProfitAmount,
+      );
       break;
 
     case "takeProfitPrice":
       result.takeProfitPrice = elementChangedValue;
-
       const priceDifferenceTP =
-        positionType === "buy"
+        positionType === "BUY"
           ? elementChangedValue - currentPrice
           : currentPrice - elementChangedValue;
-      result.takeProfitValue = priceDifferenceTP / pipValue;
-      result.takeProfitAmount =
-        result.takeProfitValue * positionSize * pipValue;
-      result.takeProfitPercentage =
-        (result.takeProfitAmount / (currentPrice * positionSize)) * 100;
+      result.takeProfitValue = Math.abs(
+        (priceDifferenceTP / pipValue) * 100000,
+      );
+      result.takeProfitAmount = calculateAmount(result.takeProfitValue);
+      result.takeProfitPercentage = calculatePercentage(
+        result.takeProfitAmount,
+      );
       break;
 
     case "takeProfitAmount":
-      result.takeProfitAmount = elementChangedValue;
-
-      result.takeProfitValue = elementChangedValue / (positionSize * pipValue);
-      const priceChangeTp = result.takeProfitValue * pipValue;
+      result.takeProfitAmount = Math.abs(elementChangedValue);
+      result.takeProfitValue = Math.abs(
+        elementChangedValue / (convertedPositionSize * pipValue),
+      );
+      const takeProfitPriceChangeAmount =
+        (result.takeProfitValue * pipValue) / 100000;
       result.takeProfitPrice =
-        positionType === "buy"
-          ? currentPrice + priceChangeTp
-          : currentPrice - priceChangeTp;
-      result.takeProfitPercentage =
-        (elementChangedValue / (currentPrice * positionSize)) * 100;
+        positionType === "BUY"
+          ? currentPrice + takeProfitPriceChangeAmount
+          : currentPrice - takeProfitPriceChangeAmount;
+      result.takeProfitPercentage = calculatePercentage(elementChangedValue);
       break;
 
     case "takeProfitPercentage":
-      result.takeProfitPercentage = elementChangedValue;
-
-      const amountProfit =
-        (elementChangedValue / 100) * (currentPrice * positionSize);
-      result.takeProfitAmount = amountProfit;
-      result.takeProfitValue = amountProfit / (positionSize * pipValue);
-      const tpPriceChange = result.takeProfitValue * pipValue;
+      const takeProfitAmountFromPercentage =
+        (elementChangedValue / 100) *
+        (currentPrice * convertedPositionSize * lotSize);
+      result.takeProfitAmount = Math.abs(takeProfitAmountFromPercentage);
+      result.takeProfitValue = Math.abs(
+        takeProfitAmountFromPercentage /
+          (convertedPositionSize * lotSize * pipValue),
+      );
+      const takeProfitPriceChangePercentage =
+        (result.takeProfitValue * pipValue) / 100000;
       result.takeProfitPrice =
-        positionType === "buy"
-          ? currentPrice + tpPriceChange
-          : currentPrice - tpPriceChange;
+        positionType === "BUY"
+          ? currentPrice + takeProfitPriceChangePercentage
+          : currentPrice - takeProfitPriceChangePercentage;
+      result.takeProfitPercentage = elementChangedValue;
       break;
 
     case "orderSize":
       if (existingValues.stopLossValue !== undefined) {
-        result.stopLossAmount =
-          existingValues.stopLossValue * positionSize * pipValue;
-        result.stopLossPercentage =
-          (result.stopLossAmount / (currentPrice * positionSize)) * 100;
+        result.stopLossAmount = calculateAmount(existingValues.stopLossValue);
+        result.stopLossPercentage = calculatePercentage(result.stopLossAmount);
       }
       if (existingValues.takeProfitValue !== undefined) {
-        result.takeProfitAmount =
-          existingValues.takeProfitValue * positionSize * pipValue;
-        result.takeProfitPercentage =
-          (result.takeProfitAmount / (currentPrice * positionSize)) * 100;
+        result.takeProfitAmount = calculateAmount(
+          existingValues.takeProfitValue,
+        );
+        result.takeProfitPercentage = calculatePercentage(
+          result.takeProfitAmount,
+        );
       }
       break;
 

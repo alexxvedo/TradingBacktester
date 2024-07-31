@@ -27,7 +27,7 @@ export default function HistoryTable({
   saveSessionData,
 }) {
   return (
-    <Table aria-label="Position Table" className="h-full max-h-full">
+    <Table aria-label="History Table" className="h-full max-h-full">
       <TableHeader>
         <TableRow>
           <TableHead>Date</TableHead>

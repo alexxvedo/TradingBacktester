@@ -125,7 +125,10 @@ export default function PositionPanel({
                 <TabsTrigger value="positions">Positions</TabsTrigger>
                 <TabsTrigger value="history">History</TabsTrigger>
               </TabsList>
-              <TabsContent value="positions" className="max-h-full">
+              <TabsContent
+                value="positions"
+                className="max-h-full overflow-y-auto"
+              >
                 {panelOpen && (
                   <div className="w-full h-full  ">
                     {!fetchingPositions ? (
@@ -157,7 +160,7 @@ export default function PositionPanel({
               </TabsContent>
               <TabsContent
                 value="history"
-                className="max-h-[80%] overflow-y-scroll"
+                className="max-h-full overflow-y-scroll"
               >
                 {panelOpen && (
                   <div className="w-full ">

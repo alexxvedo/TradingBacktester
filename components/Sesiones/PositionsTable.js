@@ -163,7 +163,7 @@ export default function PositionsTable({
   };
 
   return (
-    <Table aria-label="Position Table" className="max-h-[100%]">
+    <Table aria-label="Position Table" className="h-full max-h-full">
       <TableHeader>
         <TableRow>
           <TableHead>Date</TableHead>
@@ -178,7 +178,7 @@ export default function PositionsTable({
         </TableRow>
       </TableHeader>
       {orders != undefined && orders.length != 0 && (
-        <TableBody className="max-h-[80%]">
+        <TableBody className="max-h-full]">
           {orders.map((order, index) => (
             <TableRow key={index}>
               <TableCell>
