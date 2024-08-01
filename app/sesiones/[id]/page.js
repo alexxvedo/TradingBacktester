@@ -53,6 +53,7 @@ export default function SessionPage() {
   const [lineSeries, setLineSeries] = useState(null);
   const [priceLines, setPriceLines] = useState([]);
   const { theme, setTheme } = useTheme();
+  console.log(theme);
   const [timeZone, setTimeZone] = useState("Europe/London");
 
   // Define `timer` using useRef
@@ -433,6 +434,7 @@ export default function SessionPage() {
         setRecoverCandleIndex(data.currentCandleIndex);
 
         const storedData = await localforage.getItem(`sessionData_${id}`);
+        console.log("Stored data: ", storedData);
 
         if (storedData && storedData.length > 0) {
           console.log(storedData.length, data.currentCandleIndex);

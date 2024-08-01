@@ -38,7 +38,7 @@ export default function ChartPlayer({
           src={RewindIcon}
           alt="Rewind"
           sizes="icon"
-          className={` w-full h-full ${theme === "light" ? "invert" : "invert-0"}`}
+          className="w-full h-full invert dark:invert-0"
         />
       </Button>
       <Button variant="outline" size="icon" onClick={togglePause}>
@@ -46,7 +46,7 @@ export default function ChartPlayer({
           src={!isPaused ? PauseIcon : PlayIcon}
           alt="Pause"
           sizes="icon"
-          className={`w-full h-full ${theme === "light" ? "invert" : "invert-0"}`}
+          className="w-full h-full invert dark:invert-0"
         />
       </Button>
       <Slider
@@ -62,7 +62,7 @@ export default function ChartPlayer({
           src={FastForwardIcon}
           alt="Fast Forward"
           sizes="icon"
-          className={`w-full h-full ${theme === "light" ? "invert" : "invert-0"}`}
+          className="w-full h-full invert dark:invert-0"
         />
       </Button>
       <Button variant="save" size="icon" onClick={saveSessionData}>
