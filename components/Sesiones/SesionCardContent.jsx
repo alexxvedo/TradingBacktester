@@ -1,22 +1,16 @@
 import { TrendingUp } from "lucide-react";
 import {
-  LineChart,
-  Line,
+  Area,
+  AreaChart,
   XAxis,
   YAxis,
   CartesianGrid,
   LabelList,
   Tooltip,
   Legend,
+  ReferenceLine,
 } from "recharts";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+
 import {
   ChartContainer,
   ChartTooltip,
@@ -33,12 +27,14 @@ export default function SesionCardContent({ sesion, balances }) {
   const singlePoint = balances.length === 1;
   const padding = (maxBalance - minBalance) * 0.1 || 0.1;
 
+  console.log(balances[balances.length - 1]);
+
   const startDate = new Date(sesion.startDate).toLocaleDateString();
   const endDate =
     balances.length > 1
       ? balances[balances.length - 1].date
       : new Date(
-          new Date(sesion.startDate).getTime() + 24 * 60 * 60 * 1000,
+          new Date(sesion.startDate).getTime() + 24 * 60 * 60 * 1000
         ).toLocaleDateString();
 
   const chartConfig = {
@@ -68,7 +64,11 @@ export default function SesionCardContent({ sesion, balances }) {
         </div>
         <div className="flex items-center justify-between">
           <span className="text-muted-foreground">Current Balance:</span>
-          <span>{sesion.currentBalance.toFixed(2)}</span>
+          <span>
+            {balances && balances.length > 0
+              ? balances[balances.length - 1].balance.toFixed(2)
+              : "-"}
+          </span>
         </div>
         <div className="flex items-center justify-between">
           <span className="text-muted-foreground">Profit:</span>
@@ -83,7 +83,7 @@ export default function SesionCardContent({ sesion, balances }) {
       </div>
       <div className="mt-4">
         <ChartContainer config={chartConfig}>
-          <LineChart
+          <AreaChart
             accessibilityLayer
             data={balances}
             margin={{
@@ -111,11 +111,12 @@ export default function SesionCardContent({ sesion, balances }) {
               cursor={false}
               content={<ChartTooltipContent indicator="line" />}
             />
-            <Line
+            <Area
               dataKey="balance"
               type="monotone"
               stroke="var(--color-balance)"
               strokeWidth={2}
+              fill="var(--color-balance)"
               dot={{
                 fill: "var(--color-balance)",
               }}
@@ -123,7 +124,13 @@ export default function SesionCardContent({ sesion, balances }) {
                 r: 6,
               }}
             />
-          </LineChart>
+            <ReferenceLine
+              y={balances && balances.length > 0 ? balances[0].balance : ""}
+              stroke="gray"
+              strokeDasharray="3 3"
+              label={{ value: "Initial Balance", fill: "gray" }}
+            />
+          </AreaChart>
         </ChartContainer>
       </div>
     </div>

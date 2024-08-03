@@ -14,7 +14,7 @@ export default function RootLayout({ children }) {
       <html lang="en" suppressHydrationWarning>
         <body>
           <NextUIProvider>
-            <NextThemesProvider attribute="class" defaultTheme="system">
+            <NextThemesProvider attribute="class" defaultTheme="dark">
               {children}
               <Analytics />
               <SpeedInsights />

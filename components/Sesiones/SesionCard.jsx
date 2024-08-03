@@ -79,7 +79,7 @@ const SesionCard = ({ sesion }) => {
           </small>
         </div>
         <Link href={`/sesiones/${sesion.id}`} className="max-w-[45%] ">
-          <Button color="primary">Go to session</Button>
+          <Button color="default">Go to session</Button>
         </Link>
       </CardHeader>
       <CardContent>

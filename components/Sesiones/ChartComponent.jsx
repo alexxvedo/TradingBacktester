@@ -15,6 +15,7 @@ export default function ChartComponent({
   setPriceLines,
   orders,
   setOrders,
+  chartColors,
   //handleRangeChange,
 }) {
   const [dragging, setDragging] = useState({ isDragging: false, index: null });
@@ -24,26 +25,66 @@ export default function ChartComponent({
       chartRef.current.applyOptions({
         layout: {
           background: {
-            color: theme === "dark" ? "#27272A" : "#efefef",
+            color:
+              chartColors &&
+              chartColors.background &&
+              chartColors.background !== "#27272A" &&
+              chartColors.background !== "#efefef"
+                ? chartColors.background
+                : theme === "dark"
+                ? "#27272A"
+                : "#efefef",
           },
-          textColor: theme === "dark" ? "#efefef" : "#27272A",
+          textColor:
+            chartColors &&
+            chartColors.textColor &&
+            chartColors.textColor !== "#27272A" &&
+            chartColors.textColor !== "#efefef"
+              ? chartColors.textColor
+              : theme === "dark"
+              ? "#efefef"
+              : "#27272A",
         },
         grid: {
           vertLines: {
-            color: theme === "dark" ? "#414141" : "#a1a1a1",
+            color:
+              chartColors &&
+              chartColors.verticalLines &&
+              chartColors.verticalLines !== "#a1a1a1" &&
+              chartColors.verticalLines !== "#414141"
+                ? chartColors.verticalLines
+                : theme === "dark"
+                ? "#414141"
+                : "#a1a1a1",
           },
           horzLines: {
-            color: theme === "dark" ? "#414141" : "#a1a1a1",
+            color:
+              chartColors &&
+              chartColors.horizontalLines &&
+              chartColors.horizontalLines !== "#a1a1a1" &&
+              chartColors.horizontalLines !== "#414141"
+                ? chartColors.horizontalLines
+                : theme === "dark"
+                ? "#414141"
+                : "#a1a1a1",
           },
         },
       });
 
       seriesRef.current.applyOptions({
-        upColor: "#26a69a",
-        downColor: "#ef5350",
+        upColor:
+          chartColors && chartColors.upColor ? chartColors.upColor : "#26a69a",
+        downColor:
+          chartColors && chartColors.downColor
+            ? chartColors.downColor
+            : "#ef5350",
         borderVisible: false,
-        wickUpColor: "#26a69a",
-        wickDownColor: "#ef5350",
+        wickUpColor:
+          chartColors && chartColors.wickUp ? chartColors.wickUp : "#26a69a",
+        wickDownColor:
+          chartColors && chartColors.wickDown
+            ? chartColors.wickDown
+            : "#ef5350",
       });
     }
   };
@@ -57,7 +98,7 @@ export default function ChartComponent({
         sortedMarkers.map((marker) => ({
           time: marker.time,
           value: marker.value,
-        })),
+        }))
       );
       lineSeries.setMarkers(
         sortedMarkers.map((marker) => ({
@@ -69,7 +110,7 @@ export default function ChartComponent({
             marker.type === "buy"
               ? "Buy " + marker.size + " @ " + marker.value
               : "Sell " + marker.size + " @ " + marker.value,
-        })),
+        }))
       );
     }
   }, [markers, lineSeries]);
@@ -80,13 +121,37 @@ export default function ChartComponent({
         autoSize: true,
         layout: {
           background: {
-            color: theme === "dark" ? "#27272A" : "#cfcfcf",
+            color:
+              chartColors && chartColors.background
+                ? chartColors.background
+                : theme === "dark"
+                ? "#27272A"
+                : "#efefef",
           },
-          textColor: theme === "light" ? "#27272A" : "#ffffff",
+          textColor:
+            chartColors && chartColors.textColor
+              ? chartColors.textColor
+              : theme === "dark"
+              ? "#efefef"
+              : "#27272A",
         },
         grid: {
-          vertLines: { color: theme === "light" ? "#818181" : "#414141" },
-          horzLines: { color: theme === "light" ? "#818181" : "#414141" },
+          vertLines: {
+            color:
+              chartColors && chartColors.verticalLines
+                ? chartColors.verticalLines
+                : theme === "dark"
+                ? "#414141"
+                : "#a1a1a1",
+          },
+          horzLines: {
+            color:
+              chartColors && chartColors.horizontalLines
+                ? chartColors.horizontalLines
+                : theme === "dark"
+                ? "#414141"
+                : "#a1a1a1",
+          },
         },
         timeScale: {
           rightOffset: 12,
@@ -95,7 +160,8 @@ export default function ChartComponent({
           lockVisibleTimeRangeOnResize: true,
           rightBarStaysOnScroll: true,
           borderVisible: false,
-          borderColor: "#313131",
+          borderColor:
+            chartColors && chartColors.border ? chartColors.border : "#313131",
           visible: true,
           timeVisible: true,
         },
@@ -114,11 +180,19 @@ export default function ChartComponent({
           precision: 5,
           minMove: 0.00001,
         },
-        upColor: "#26a69a",
-        downColor: "#ef5350",
+        upColor:
+          chartColors && chartColors.upColor ? chartColors.upColor : "#26a69a",
+        downColor:
+          chartColors && chartColors.downColor
+            ? chartColors.downColor
+            : "#ef5350",
         borderVisible: false,
-        wickUpColor: "#26a69a",
-        wickDownColor: "#ef5350",
+        wickUpColor:
+          chartColors && chartColors.wickUp ? chartColors.wickUp : "#26a69a",
+        wickDownColor:
+          chartColors && chartColors.wickDown
+            ? chartColors.wickDown
+            : "#ef5350",
       });
 
       setLineSeries(
@@ -126,14 +200,14 @@ export default function ChartComponent({
           color: "rgba(255, 255, 255, 0)",
           lastValueVisible: false,
           priceLineVisible: false,
-        }),
+        })
       );
 
       //chart.timeScale().subscribeVisibleLogicalRangeChange(handleRangeChange);
     } else {
       updateChartColors();
     }
-  }, [theme, timeZone]);
+  }, [theme, timeZone, chartColors]);
 
   const handleMouseMove = (event) => {
     if (!dragging.isDragging || dragging.index === null) return;
@@ -219,15 +293,15 @@ export default function ChartComponent({
         if (chartContainerRef.current) {
           chartContainerRef.current.removeEventListener(
             "mousemove",
-            handleMouseMove,
+            handleMouseMove
           );
           chartContainerRef.current.removeEventListener(
             "mousedown",
-            handleMouseDown,
+            handleMouseDown
           );
           chartContainerRef.current.removeEventListener(
             "mouseup",
-            handleMouseUp,
+            handleMouseUp
           );
         }
         /*if (chartRef.current) {

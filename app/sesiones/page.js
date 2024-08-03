@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@clerk/nextjs";
+import { useAuth, useUser } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 
 // Components
@@ -22,6 +22,7 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
+import { CircularProgress } from "@nextui-org/progress";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -52,6 +53,7 @@ import Link from "next/link";
 
 export default function Sesiones() {
   const { isLoaded, userId } = useAuth();
+  const { isUserLoaded, user } = useUser();
   const [sessions, setSessions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [title, setTitle] = useState("");
@@ -75,6 +77,96 @@ export default function Sesiones() {
   const [endInputValue, setEndInputValue] = useState("");
   const [startInputError, setStartInputError] = useState("");
   const [endInputError, setEndInputError] = useState("");
+  const [subscription, setSubscription] = useState(null);
+  const [availableSessions, setAvaliableSessions] = useState();
+
+  const plans = [
+    {
+      id: "price_1PfUlABhv3eVXfrJInBE8lQH",
+      name: "Free",
+      maxSessions: 3,
+      features: [
+        { text: "3 sesiones / mes", available: true },
+        { text: "7500 velas por sesión", available: true },
+        { text: "20+ símbolos Forex", available: true },
+        {
+          text: "Multiples temporalidades (Solo mayores a la temporalidad de la sesion)",
+          available: false,
+        },
+        { text: "No trading realista", available: false },
+      ],
+      price: "$0",
+    },
+    {
+      id: "price_1PfUlQBhv3eVXfrJ7nk4IYMZ",
+      name: "Hobby",
+      maxSessions: 10,
+      features: [
+        { text: "10 sesiones / mes", available: true },
+        { text: "30000 velas por sesión", available: true },
+        { text: "20+ símbolos Forex", available: true },
+        {
+          text: "Multiples temporalidades (Solo mayores a la temporalidad de la sesion)",
+          available: false,
+        },
+        { text: "No trading realista", available: false },
+      ],
+      price: "$7.99",
+    },
+    {
+      id: "price_1PfUlbBhv3eVXfrJulV48Mtb",
+      name: "Pro",
+      maxSessions: 15,
+      features: [
+        { text: "Sesiones básicas ilimitadas", available: true },
+        { text: "100000 velas por sesión", available: true },
+        { text: "20+ símbolos Forex", available: true },
+        {
+          text: "Multiples temporalidades (Solo mayores a la temporalidad de la sesion)",
+          available: true,
+        },
+        {
+          text: "Trading realista (actualizaciones cada segundo)",
+          available: true,
+        },
+        { text: "15 sesiones por mes", available: true, realistic: true },
+        { text: "1 minuto: 50000 velas", available: true, realistic: true },
+        { text: "5 minutos: 1000 velas", available: true, realistic: true },
+        { text: "15 minutos: 4000 velas", available: true, realistic: true },
+        { text: "1 hora: 1000 velas", available: true, realistic: true },
+      ],
+      price: "$15.99",
+    },
+  ];
+
+  useEffect(() => {
+    if (!isLoaded || !userId) {
+      return;
+    }
+    const fetchSubscription = async () => {
+      try {
+        const res = await fetch("/api/stripe/get-user-subscription", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!res.ok) {
+          throw new Error(`Error: ${res.status}`);
+        }
+
+        const subscription = await res.json();
+        console.log(subscription);
+        setSubscription(subscription);
+      } catch (error) {
+        console.error("Error fetching subscription:", error);
+      } finally {
+      }
+    };
+
+    fetchSubscription();
+  }, [isLoaded, userId]);
 
   useEffect(() => {
     if (userId) {
@@ -82,7 +174,65 @@ export default function Sesiones() {
     }
   }, [userId]);
 
+  useEffect(() => {
+    if (subscription) {
+      const sessionCount = countUserSessionsThisMonth(
+        user?.createdAt,
+        sessions
+      );
+      console.log("Session count: ", sessionCount);
+      setAvaliableSessions(sessionCount);
+    }
+  }, [subscription]);
+
   const pairOptions = ["EURUSD", "USDJPY"];
+
+  const getSubscriptionPeriod = (creationDate) => {
+    const now = new Date();
+    const creationDay = creationDate.getDate();
+    const creationMonth = creationDate.getMonth();
+    const creationYear = creationDate.getFullYear();
+
+    let startOfPeriod;
+    let endOfPeriod;
+
+    if (now.getDate() >= creationDay) {
+      startOfPeriod = new Date(now.getFullYear(), now.getMonth(), creationDay);
+      endOfPeriod = new Date(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        creationDay
+      );
+    } else {
+      startOfPeriod = new Date(
+        now.getFullYear(),
+        now.getMonth() - 1,
+        creationDay
+      );
+      endOfPeriod = new Date(now.getFullYear(), now.getMonth(), creationDay);
+    }
+
+    return { startOfPeriod, endOfPeriod };
+  };
+
+  const countUserSessionsThisMonth = (creationDate, sessions) => {
+    const { startOfPeriod, endOfPeriod } = getSubscriptionPeriod(creationDate);
+
+    const sessionsThisMonth = sessions.filter((session) => {
+      console.log(
+        "Comparando: ",
+        new Date(session.createdAt),
+        startOfPeriod,
+        endOfPeriod
+      );
+      return (
+        new Date(session.createdAt) >= startOfPeriod &&
+        new Date(session.createdAt) < endOfPeriod
+      );
+    });
+
+    return sessionsThisMonth.length;
+  };
 
   const timeframeOptions = {
     M1: "1min",
@@ -136,10 +286,10 @@ export default function Sesiones() {
     let currentDate = new Date(
       startDate.year,
       startDate.month - 1,
-      startDate.day,
+      startDate.day
     );
     const maxEndDate = new Date(
-      today(getLocalTimeZone()).subtract({ days: 1 }),
+      today(getLocalTimeZone()).subtract({ days: 1 })
     );
 
     while (currentDate <= maxEndDate) {
@@ -164,13 +314,13 @@ export default function Sesiones() {
     if (dates.start) {
       const updatedAvailableDates = generateAvailableDates(
         dates.start,
-        timeframeOptions[timeframe],
+        timeframeOptions[timeframe]
       );
       setAvailableDates(updatedAvailableDates);
     } else {
       const allDates = generateAvailableDates(
         { year: 2014, month: 1, day: 1 },
-        timeframeOptions[timeframe],
+        timeframeOptions[timeframe]
       );
       setAvailableDates(allDates);
     }
@@ -183,7 +333,7 @@ export default function Sesiones() {
   const handleSubmit = async () => {
     if (tooManyCandles) {
       toast.error(
-        "The selected date range and timeframe result in more than 10,000 candles. Please select a shorter date range or a higher timeframe.",
+        "The selected date range and timeframe result in more than 10,000 candles. Please select a shorter date range or a higher timeframe."
       );
       return;
     }
@@ -193,12 +343,12 @@ export default function Sesiones() {
         new Date(
           dates.start.year,
           dates.start.month - 1,
-          dates.start.day,
+          dates.start.day
         ).toISOString(),
         new Date(
           dates.end.year,
           dates.end.month - 1,
-          dates.end.day,
+          dates.end.day
         ).toISOString(),
       ]);
 
@@ -210,7 +360,7 @@ export default function Sesiones() {
         endDate,
         pair,
         timeframeOptions[timeframe],
-        realistic,
+        realistic
       );
 
       const res = await fetch("/api/sessions", {
@@ -258,11 +408,17 @@ export default function Sesiones() {
     }));
     if (dateType === "start") {
       setStartInputValue(
-        `${newDate.getFullYear()}-${String(newDate.getMonth() + 1).padStart(2, "0")}-${String(newDate.getDate()).padStart(2, "0")}`,
+        `${newDate.getFullYear()}-${String(newDate.getMonth() + 1).padStart(
+          2,
+          "0"
+        )}-${String(newDate.getDate()).padStart(2, "0")}`
       );
     } else {
       setEndInputValue(
-        `${newDate.getFullYear()}-${String(newDate.getMonth() + 1).padStart(2, "0")}-${String(newDate.getDate()).padStart(2, "0")}`,
+        `${newDate.getFullYear()}-${String(newDate.getMonth() + 1).padStart(
+          2,
+          "0"
+        )}-${String(newDate.getDate()).padStart(2, "0")}`
       );
     }
   };
@@ -281,347 +437,399 @@ export default function Sesiones() {
         <h2 className="text-2xl font-bold">Sesiones</h2>
 
         <div className="flex gap-2">
-          <Link href="/plan">
-            <Button className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white">
-              Plans
-            </Button>
-          </Link>
-          <Drawer>
-            <DrawerTrigger asChild>
+          <div className="flex gap-2">
+            <span className="md:text-xl sm:text-small text-bold text-center flex items-center justify-center">
+              Sessions left:{" "}
+            </span>
+            <div className="relative flex flex-row items-center justify-center">
+              <CircularProgress
+                aria-label="Sessions left"
+                className="flex items-center justify-center"
+                size="lg"
+                value={
+                  subscription
+                    ? subscription.plan.metadata.maxSessions - availableSessions
+                    : ""
+                }
+                color="primary"
+                minValue={0}
+                maxValue={
+                  subscription ? subscription.plan.metadata.maxSessions : 0
+                }
+                showValueLabel={false} // Oculta el valor por defecto
+              />
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-xl font-bold">
+                <span className="text-bold">
+                  {subscription
+                    ? subscription.plan.metadata.maxSessions - availableSessions
+                    : ""}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="flex gap-2 items-center justify-center">
+            <Link href="/plan">
               <Button className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white">
-                New
+                Plans
               </Button>
-            </DrawerTrigger>
-            <DrawerContent>
-              <div className="mx-auto max-w-sm flex flex-col gap-4 ">
-                <DrawerHeader className="flex flex-col gap-1">
-                  <DrawerTitle>New Session</DrawerTitle>
-                </DrawerHeader>
-                <label id="title" className="text-sm font-semibold">
-                  Title
-                </label>
-                <Input
-                  htmlFor="title"
-                  label="Title"
-                  placeholder="Title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  required
-                />
-                <label id="description" className="text-sm font-semibold">
-                  Description
-                </label>
-                <Textarea
-                  label="Description"
-                  htmlFor="description"
-                  placeholder="Description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  required
-                />
-                <div className="flex gap-4 justify-between">
-                  <div className="flex flex-col w-full">
-                    <label id="accountSize" className="text-sm font-semibold">
-                      Account Size
-                    </label>
-                    <Select
-                      htmlFor="accountSize"
-                      value={accountSize}
-                      onValueChange={(size) =>
-                        setAccountSize(size.split("€")[0])
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={accountSize} />
-                      </SelectTrigger>
-
-                      <SelectContent>
-                        <SelectGroup>
-                          <SelectItem value="5000">5000€</SelectItem>
-                          <SelectItem value="10000">10000€</SelectItem>
-                          <SelectItem value="20000">20000€</SelectItem>
-                          <SelectItem value="50000">50000€</SelectItem>
-                          <SelectItem value="100000">100000€</SelectItem>
-                          <SelectItem value="150000">150000€</SelectItem>
-                          <SelectItem value="200000">200000€</SelectItem>
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex flex-col w-full">
-                    <label id="pair" className="text-sm font-semibold">
-                      Pair
-                    </label>
-                    <Select
-                      htmlFor="pair"
-                      value={pair}
-                      onValueChange={(pair) => setPair(pair)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={pair} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          {pairOptions.map((pair) => (
-                            <SelectItem key={pair} value={pair}>
-                              {pair}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex flex-col w-full">
-                    <label id="timeframe" className="text-sm font-semibold">
-                      Timeframe
-                    </label>
-                    <Select
-                      htmlFor="timeframe"
-                      value={timeframe}
-                      onValueChange={(e) => {
-                        setTimeframe(e);
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={timeframe} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          {Object.entries(timeframeOptions).map(
-                            ([key, value]) => (
-                              <SelectItem key={key} value={key}>
-                                {key}
-                              </SelectItem>
-                            ),
-                          )}
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="w-full ">
-                  <div className="flex gap-4 w-full justify-between ">
-                    <div className="flex flex-col w-[50%]">
-                      <label id="startDate" className="text-sm font-semibold">
-                        Start date
+            </Link>
+            <Drawer>
+              <DrawerTrigger asChild>
+                <Button className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white">
+                  New
+                </Button>
+              </DrawerTrigger>
+              <DrawerContent>
+                <div className="mx-auto max-w-sm flex flex-col gap-4 ">
+                  <DrawerHeader className="flex flex-col gap-1">
+                    <DrawerTitle>New Session</DrawerTitle>
+                  </DrawerHeader>
+                  <label id="title" className="text-sm font-semibold">
+                    Title
+                  </label>
+                  <Input
+                    htmlFor="title"
+                    label="Title"
+                    placeholder="Title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    required
+                  />
+                  <label id="description" className="text-sm font-semibold">
+                    Description
+                  </label>
+                  <Textarea
+                    label="Description"
+                    htmlFor="description"
+                    placeholder="Description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    required
+                  />
+                  <div className="flex gap-4 justify-between">
+                    <div className="flex flex-col w-full">
+                      <label id="accountSize" className="text-sm font-semibold">
+                        Account Size
                       </label>
-                      <div className="flex  justify-center">
-                        <Popover htmlFor="startDate">
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant={"outline"}
-                              className={cn(
-                                "w-auto justify-center ",
-                                !dates.start && "text-muted-foreground",
-                              )}
-                            >
-                              <CalendarIcon className="h-4 w-4" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0">
-                            <Calendar
-                              mode="single"
-                              initialFocus
-                              defaultMonth={
-                                dates.start
-                                  ? new Date(
-                                      dates.start.year,
-                                      dates.start.month - 1,
-                                      dates.start.day,
-                                    )
-                                  : new Date()
-                              }
-                              selected={
-                                dates.start
-                                  ? new Date(
-                                      dates.start.year,
-                                      dates.start.month - 1,
-                                      dates.start.day,
-                                    )
-                                  : null
-                              }
-                              onSelect={(newDate) =>
-                                handleDateChange(newDate, "start")
-                              }
-                              disabled={(date) =>
-                                date > new Date() ||
-                                date < new Date("2014-01-01")
-                              }
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        <div className="flex ">
-                          <Input
-                            value={startInputValue}
-                            placeholder="Start date"
-                            className="w-full"
-                            onChange={(e) => {
-                              setStartInputValue(e.target.value);
-                              setStartInputError("");
-                            }}
-                            onBlur={(e) => {
-                              const [year, month, day] = e.target.value
-                                .split("-")
-                                .map(Number);
-                              if (isDateValid(year, month, day)) {
-                                const newDate = new Date(year, month - 1, day);
-                                handleDateChange(newDate, "start");
-                              } else {
-                                const newDate = new Date(year, month - 1, day);
-                                setStartInputValue(
-                                  `${dates.start.year}-${String(dates.start.month).padStart(2, "0")}-${String(dates.start.day).padStart(2, "0")}`,
-                                );
-                                setStartInputError(
-                                  "Invalid date. Please select a date within the valid range.",
-                                );
-                              }
-                            }}
-                          />
-                        </div>
-                      </div>
+                      <Select
+                        htmlFor="accountSize"
+                        value={accountSize}
+                        onValueChange={(size) =>
+                          setAccountSize(size.split("€")[0])
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={accountSize} />
+                        </SelectTrigger>
+
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectItem value="5000">5000€</SelectItem>
+                            <SelectItem value="10000">10000€</SelectItem>
+                            <SelectItem value="20000">20000€</SelectItem>
+                            <SelectItem value="50000">50000€</SelectItem>
+                            <SelectItem value="100000">100000€</SelectItem>
+                            <SelectItem value="150000">150000€</SelectItem>
+                            <SelectItem value="200000">200000€</SelectItem>
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
                     </div>
-
-                    <div className="flex flex-col w-[50%]">
-                      <label id="endDate" className="text-sm font-semibold">
-                        End date
+                    <div className="flex flex-col w-full">
+                      <label id="pair" className="text-sm font-semibold">
+                        Pair
                       </label>
-                      <div className="flex justify-center">
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant={"outline"}
-                              className={cn(
-                                "w-auto justify-center ",
-                                !dates.start && "text-muted-foreground",
-                              )}
-                            >
-                              <CalendarIcon className="h-4 w-4" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0">
-                            <Calendar
-                              mode="single"
-                              selected={
-                                dates.end
-                                  ? new Date(
-                                      dates.end.year,
-                                      dates.end.month - 1,
-                                      dates.end.day,
-                                    )
-                                  : null
-                              }
-                              defaultMonth={
-                                dates.end
-                                  ? new Date(
-                                      dates.end.year,
-                                      dates.end.month - 1,
-                                      dates.end.day,
-                                    )
-                                  : dates.start
+                      <Select
+                        htmlFor="pair"
+                        value={pair}
+                        onValueChange={(pair) => setPair(pair)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={pair} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            {pairOptions.map((pair) => (
+                              <SelectItem key={pair} value={pair}>
+                                {pair}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex flex-col w-full">
+                      <label id="timeframe" className="text-sm font-semibold">
+                        Timeframe
+                      </label>
+                      <Select
+                        htmlFor="timeframe"
+                        value={timeframe}
+                        onValueChange={(e) => {
+                          setTimeframe(e);
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={timeframe} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            {Object.entries(timeframeOptions).map(
+                              ([key, value]) => (
+                                <SelectItem key={key} value={key}>
+                                  {key}
+                                </SelectItem>
+                              )
+                            )}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="w-full ">
+                    <div className="flex gap-4 w-full justify-between ">
+                      <div className="flex flex-col w-[50%]">
+                        <label id="startDate" className="text-sm font-semibold">
+                          Start date
+                        </label>
+                        <div className="flex  justify-center">
+                          <Popover htmlFor="startDate">
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant={"outline"}
+                                className={cn(
+                                  "w-auto justify-center ",
+                                  !dates.start && "text-muted-foreground"
+                                )}
+                              >
+                                <CalendarIcon className="h-4 w-4" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                              <Calendar
+                                mode="single"
+                                initialFocus
+                                defaultMonth={
+                                  dates.start
                                     ? new Date(
                                         dates.start.year,
                                         dates.start.month - 1,
-                                        dates.start.day,
+                                        dates.start.day
                                       )
-                                    : ""
-                              }
-                              onSelect={(newDate) =>
-                                handleDateChange(newDate, "end")
-                              }
-                              disabled={(date) => {
-                                const dateString = date
-                                  .toISOString()
-                                  .split("T")[0];
-                                return !availableDates.includes(dateString);
+                                    : new Date()
+                                }
+                                selected={
+                                  dates.start
+                                    ? new Date(
+                                        dates.start.year,
+                                        dates.start.month - 1,
+                                        dates.start.day
+                                      )
+                                    : null
+                                }
+                                onSelect={(newDate) =>
+                                  handleDateChange(newDate, "start")
+                                }
+                                disabled={(date) =>
+                                  date > new Date() ||
+                                  date < new Date("2014-01-01")
+                                }
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <div className="flex ">
+                            <Input
+                              value={startInputValue}
+                              placeholder="Start date"
+                              className="w-full"
+                              onChange={(e) => {
+                                setStartInputValue(e.target.value);
+                                setStartInputError("");
                               }}
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        <div className="flex ">
-                          <Input
-                            value={endInputValue}
-                            placeholder="End date"
-                            className="w-full"
-                            onChange={(e) => {
-                              setEndInputValue(e.target.value);
-                              setEndInputError("");
-                            }}
-                            onBlur={(e) => {
-                              try {
+                              onBlur={(e) => {
                                 const [year, month, day] = e.target.value
                                   .split("-")
                                   .map(Number);
-
                                 if (isDateValid(year, month, day)) {
                                   const newDate = new Date(
                                     year,
                                     month - 1,
-                                    day,
+                                    day
                                   );
-                                  handleDateChange(newDate, "end");
+                                  handleDateChange(newDate, "start");
                                 } else {
                                   const newDate = new Date(
                                     year,
                                     month - 1,
-                                    day,
+                                    day
                                   );
-                                  setEndInputValue(
-                                    `${dates.end.year}-${String(dates.end.month).padStart(2, "0")}-${String(dates.end.day).padStart(2, "0")}`,
+                                  setStartInputValue(
+                                    `${dates.start.year}-${String(
+                                      dates.start.month
+                                    ).padStart(2, "0")}-${String(
+                                      dates.start.day
+                                    ).padStart(2, "0")}`
                                   );
-                                  setEndInputError(
-                                    "Invalid date. Please select a date within the valid range.",
+                                  setStartInputError(
+                                    "Invalid date. Please select a date within the valid range."
                                   );
                                 }
-                              } catch (error) {
-                                setEndInputValue(
-                                  dates.end
-                                    ? `${dates.end.year}-${String(dates.end.month).padStart(2, "0")}-${String(dates.end.day).padStart(2, "0")}`
-                                    : "",
-                                );
-                                setEndInputError(
-                                  "Invalid date. Please select a date within the valid range.",
-                                );
-                              }
-                            }}
-                          />
+                              }}
+                            />
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {tooManyCandles && (
-                      <p className="text-red-500">
-                        The selected date range and timeframe result in more
-                        than 10,000 candles. Please select a shorter date range
-                        or a higher timeframe.
-                      </p>
-                    )}
-                  </div>
-                  <div className="w-full flex items-center justify-end">
-                    <p
-                      className="text-sm text-blue-500 cursor-pointer"
-                      onClick={() => {
-                        setStartInputError("");
-                        setStartInputValue("");
-                        setEndInputError("");
-                        setEndInputValue("");
-                        setDates({ start: null, end: null });
-                      }}
-                    >
-                      Reset date
-                    </p>
-                  </div>
-                  <DrawerTrigger asChild>
-                    <div className="flex">
-                      <Button onClick={handleSubmit} className="w-full">
-                        Create
-                      </Button>
+                      <div className="flex flex-col w-[50%]">
+                        <label id="endDate" className="text-sm font-semibold">
+                          End date
+                        </label>
+                        <div className="flex justify-center">
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant={"outline"}
+                                className={cn(
+                                  "w-auto justify-center ",
+                                  !dates.start && "text-muted-foreground"
+                                )}
+                              >
+                                <CalendarIcon className="h-4 w-4" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                              <Calendar
+                                mode="single"
+                                selected={
+                                  dates.end
+                                    ? new Date(
+                                        dates.end.year,
+                                        dates.end.month - 1,
+                                        dates.end.day
+                                      )
+                                    : null
+                                }
+                                defaultMonth={
+                                  dates.end
+                                    ? new Date(
+                                        dates.end.year,
+                                        dates.end.month - 1,
+                                        dates.end.day
+                                      )
+                                    : dates.start
+                                    ? new Date(
+                                        dates.start.year,
+                                        dates.start.month - 1,
+                                        dates.start.day
+                                      )
+                                    : ""
+                                }
+                                onSelect={(newDate) =>
+                                  handleDateChange(newDate, "end")
+                                }
+                                disabled={(date) => {
+                                  const dateString = date
+                                    .toISOString()
+                                    .split("T")[0];
+                                  return !availableDates.includes(dateString);
+                                }}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <div className="flex ">
+                            <Input
+                              value={endInputValue}
+                              placeholder="End date"
+                              className="w-full"
+                              onChange={(e) => {
+                                setEndInputValue(e.target.value);
+                                setEndInputError("");
+                              }}
+                              onBlur={(e) => {
+                                try {
+                                  const [year, month, day] = e.target.value
+                                    .split("-")
+                                    .map(Number);
+
+                                  if (isDateValid(year, month, day)) {
+                                    const newDate = new Date(
+                                      year,
+                                      month - 1,
+                                      day
+                                    );
+                                    handleDateChange(newDate, "end");
+                                  } else {
+                                    const newDate = new Date(
+                                      year,
+                                      month - 1,
+                                      day
+                                    );
+                                    setEndInputValue(
+                                      `${dates.end.year}-${String(
+                                        dates.end.month
+                                      ).padStart(2, "0")}-${String(
+                                        dates.end.day
+                                      ).padStart(2, "0")}`
+                                    );
+                                    setEndInputError(
+                                      "Invalid date. Please select a date within the valid range."
+                                    );
+                                  }
+                                } catch (error) {
+                                  setEndInputValue(
+                                    dates.end
+                                      ? `${dates.end.year}-${String(
+                                          dates.end.month
+                                        ).padStart(2, "0")}-${String(
+                                          dates.end.day
+                                        ).padStart(2, "0")}`
+                                      : ""
+                                  );
+                                  setEndInputError(
+                                    "Invalid date. Please select a date within the valid range."
+                                  );
+                                }
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {tooManyCandles && (
+                        <p className="text-red-500">
+                          The selected date range and timeframe result in more
+                          than 10,000 candles. Please select a shorter date
+                          range or a higher timeframe.
+                        </p>
+                      )}
                     </div>
-                  </DrawerTrigger>
+                    <div className="w-full flex items-center justify-end">
+                      <p
+                        className="text-sm text-blue-500 cursor-pointer"
+                        onClick={() => {
+                          setStartInputError("");
+                          setStartInputValue("");
+                          setEndInputError("");
+                          setEndInputValue("");
+                          setDates({ start: null, end: null });
+                        }}
+                      >
+                        Reset date
+                      </p>
+                    </div>
+                    <DrawerTrigger asChild>
+                      <div className="flex">
+                        <Button onClick={handleSubmit} className="w-full">
+                          Create
+                        </Button>
+                      </div>
+                    </DrawerTrigger>
+                  </div>
                 </div>
-              </div>
-            </DrawerContent>
-          </Drawer>
+              </DrawerContent>
+            </Drawer>
+          </div>
         </div>
       </div>
       <hr className="my-4 w-full" />

@@ -1,5 +1,3 @@
-//import { Table,   TableHeader,  TableRow,  TableColumn,  TableBody,  TableCell,} from "@nextui-org/table";
-
 import {
   Table,
   TableBody,
@@ -10,9 +8,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-
 import { Input } from "@nextui-org/input";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { PencilIcon } from "@heroicons/react/24/solid";
 
 export default function PositionsTable({
@@ -27,71 +24,92 @@ export default function PositionsTable({
   priceLines,
   setPriceLines,
   currentCandleDate,
+  currentCandle,
 }) {
   const [editingOrder, setEditingOrder] = useState(null);
 
-  const closePosition = (key) => async () => {
-    const order = orders.find((order) => order.id === key);
+  const closePosition = useCallback(
+    async (key, exitPrice) => {
+      const order = orders.find((order) => order.id === key);
 
-    const newOrder = {
-      ...order,
-      exitPrice: currentPrice,
-      profit:
-        (currentPrice - order.entryPrice) *
-        order.size *
-        (order.type === "buy" ? 1 : -1),
-      exitDate: currentCandleDate,
-    };
-    setHistory([...history, newOrder]);
+      const newOrder = {
+        ...order,
+        exitPrice: parseFloat(exitPrice),
+        profit:
+          (exitPrice - order.entryPrice) *
+          order.size *
+          (order.type === "buy" ? 1 : -1),
+        exitDate: new Date(currentCandleDate * 1000),
+      };
 
-    try {
-      const res = await fetch(`/api/operations/${key}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          order: {
-            ...newOrder,
-            exitPrice: newOrder.exitPrice,
-            profit: newOrder.profit,
-            accountSize,
-            takeProfit: order.takeProfit,
-            stopLoss: order.stopLoss,
-            exitDate: newOrder.exitDate,
+      try {
+        const res = await fetch(`/api/operations/${key}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
           },
-          type: "close",
-        }),
-      });
-
-      if (res.ok) {
-        setOrders([...orders.filter((order) => order.id !== key)]);
-        setHistory([...history, newOrder]);
-        saveSessionData();
-        priceLines.map((priceLine) => {
-          console.log(priceLine);
-          if (
-            priceLine._private__priceLine._private__options.positionId === key
-          ) {
-            console.log("Removing price line");
-            console.log(lineSeries);
-            lineSeries.removePriceLine(priceLine);
-          }
+          body: JSON.stringify({
+            order: newOrder,
+            type: "close",
+          }),
         });
-        setPriceLines(
-          priceLines.filter(
-            (priceLine) =>
-              priceLine._private__priceLine._private__options.positionId !==
-              key,
-          ),
-        );
-      } else {
-        console.error("Failed to close operation");
+
+        if (res.ok) {
+          setOrders((prevOrders) =>
+            prevOrders.filter((order) => order.id !== key),
+          );
+          setHistory((prevHistory) => [...prevHistory, newOrder]);
+          saveSessionData();
+
+          // Eliminar los price lines relacionados con la posición cerrada
+          const updatedPriceLines = [];
+          priceLines.forEach((priceLine) => {
+            if (
+              priceLine._private__priceLine._private__options.positionId === key
+            ) {
+              lineSeries.removePriceLine(priceLine);
+            } else {
+              updatedPriceLines.push(priceLine);
+            }
+          });
+
+          setPriceLines(updatedPriceLines);
+        } else {
+          console.error("Failed to close operation");
+        }
+      } catch (error) {
+        console.error("Error closing operation:", error);
       }
-    } catch (error) {
-      console.error("Error closing operation:", error);
-    }
-  };
+    },
+    [orders, saveSessionData, currentCandleDate, lineSeries, priceLines],
+  );
+
+  useEffect(() => {
+    if (!currentCandle) return;
+
+    console.log("Comprobando sl tp");
+    const ordersToClose = [];
+
+    orders.forEach((order) => {
+      if (order.type === "buy") {
+        if (order.sl >= currentCandle.low) {
+          ordersToClose.push({ id: order.id, price: order.sl });
+        } else if (order.tp <= currentCandle.high) {
+          ordersToClose.push({ id: order.id, price: order.tp });
+        }
+      } else {
+        if (order.sl <= currentCandle.high) {
+          ordersToClose.push({ id: order.id, price: order.sl });
+        } else if (order.tp >= currentCandle.low) {
+          ordersToClose.push({ id: order.id, price: order.tp });
+        }
+      }
+    });
+
+    ordersToClose.forEach(({ id, price }) => {
+      closePosition(id, price);
+    });
+  }, [currentCandle]);
 
   const handleEdit = (order) => () => {
     setEditingOrder(order.id);
@@ -108,10 +126,9 @@ export default function PositionsTable({
       });
 
       if (res.ok) {
-        const updatedOrders = orders.map((o) =>
-          o.id === order.id ? order : o,
+        setOrders((prevOrders) =>
+          prevOrders.map((o) => (o.id === order.id ? order : o)),
         );
-        setOrders(updatedOrders);
         setEditingOrder(null);
         saveSessionData();
       } else {
@@ -124,41 +141,33 @@ export default function PositionsTable({
 
   const handleChange = (orderId, field) => (e) => {
     const value = e.target.value;
-    const updatedOrders = orders.map((order) =>
-      order.id === orderId ? { ...order, [field]: value } : order,
+    setOrders((prevOrders) =>
+      prevOrders.map((order) =>
+        order.id === orderId ? { ...order, [field]: value } : order,
+      ),
     );
-    setOrders(updatedOrders);
   };
 
   const updatePriceLine = (order, lineType) => {
     const orderId = order.id;
-    priceLines.map((priceLine) => {
-      if (
-        priceLine._private__priceLine._private__options.positionId ===
-          orderId &&
-        priceLine._private__priceLine._private__options.lineType === lineType
-      ) {
-        var newPriceLine = {
-          ...priceLine._private__priceLine._private__options,
-          price:
-            lineType === "tp" ? parseFloat(order.tp) : parseFloat(order.sl),
-          title: lineType === "tp" ? "TP @ " + order.tp : "SL @ " + order.sl,
-        };
-
-        lineSeries.removePriceLine(priceLine);
-
-        const finalPriceLine = lineSeries.createPriceLine(newPriceLine);
-
-        const newPriceLines = priceLines.filter((priceLine) => {
-          return !(
+    setPriceLines((prevPriceLines) => {
+      const newPriceLines = prevPriceLines.filter(
+        (priceLine) =>
+          !(
             priceLine._private__priceLine._private__options.positionId ===
               orderId &&
             priceLine._private__priceLine._private__options.lineType ===
               lineType
-          );
-        });
-        setPriceLines([...newPriceLines, finalPriceLine]);
-      }
+          ),
+      );
+      const newPriceLine = {
+        ...priceLine._private__priceLine._private__options,
+        price: lineType === "tp" ? parseFloat(order.tp) : parseFloat(order.sl),
+        title: lineType === "tp" ? "TP @ " + order.tp : "SL @ " + order.sl,
+      };
+      lineSeries.removePriceLine(priceLine);
+      const finalPriceLine = lineSeries.createPriceLine(newPriceLine);
+      return [...newPriceLines, finalPriceLine];
     });
   };
 
@@ -177,8 +186,8 @@ export default function PositionsTable({
           <TableHead>Actions</TableHead>
         </TableRow>
       </TableHeader>
-      {orders != undefined && orders.length != 0 && (
-        <TableBody className="max-h-full]">
+      {orders && orders.length ? (
+        <TableBody className="max-h-full">
           {orders.map((order, index) => (
             <TableRow key={index}>
               <TableCell>
@@ -220,7 +229,6 @@ export default function PositionsTable({
                     variant="underlined"
                     onBlur={() => {
                       updatePriceLine(order, "sl");
-
                       handleSave(order);
                       setEditingOrder(!editingOrder);
                     }}
@@ -257,7 +265,7 @@ export default function PositionsTable({
                 <Button
                   variant="flat"
                   color="danger"
-                  onClick={closePosition(order.id)}
+                  onClick={() => closePosition(order.id, currentPrice)}
                 >
                   Close
                 </Button>
@@ -265,8 +273,7 @@ export default function PositionsTable({
             </TableRow>
           ))}
         </TableBody>
-      )}
-      {(orders === undefined || orders.length === 0) && (
+      ) : (
         <TableBody>
           <TableRow>
             <TableCell colSpan={9} className="text-center">

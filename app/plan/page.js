@@ -3,13 +3,18 @@ import { useAuth } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { loadStripe } from "@stripe/stripe-js";
 import { Button } from "@nextui-org/button";
-import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/outline";
+import { CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { Chip } from "@nextui-org/chip";
-import { Card, CardHeader, CardBody, CardFooter } from "@nextui-org/card";
+import {
+  Card,
+  CardHeader,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
 import { useTheme } from "next-themes";
 
 const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 );
 
 const plans = [
@@ -20,9 +25,13 @@ const plans = [
       { text: "3 sesiones / mes", available: true },
       { text: "7500 velas por sesión", available: true },
       { text: "20+ símbolos Forex", available: true },
+      {
+        text: "Multiples temporalidades (Solo mayores a la temporalidad de la sesion)",
+        available: false,
+      },
       { text: "No trading realista", available: false },
     ],
-    price: "$0/mo",
+    price: "$0",
   },
   {
     id: "price_1PfUlQBhv3eVXfrJ7nk4IYMZ",
@@ -31,9 +40,13 @@ const plans = [
       { text: "10 sesiones / mes", available: true },
       { text: "30000 velas por sesión", available: true },
       { text: "20+ símbolos Forex", available: true },
+      {
+        text: "Multiples temporalidades (Solo mayores a la temporalidad de la sesion)",
+        available: false,
+      },
       { text: "No trading realista", available: false },
     ],
-    price: "$7.99/mo",
+    price: "$7.99",
   },
   {
     id: "price_1PfUlbBhv3eVXfrJulV48Mtb",
@@ -41,17 +54,22 @@ const plans = [
     features: [
       { text: "Sesiones básicas ilimitadas", available: true },
       { text: "100000 velas por sesión", available: true },
+      { text: "20+ símbolos Forex", available: true },
+      {
+        text: "Multiples temporalidades (Solo mayores a la temporalidad de la sesion)",
+        available: true,
+      },
       {
         text: "Trading realista (actualizaciones cada segundo)",
         available: true,
       },
-      { text: "15 sesiones por mes", available: true },
-      { text: "1 minuto: 50000 velas", available: true },
-      { text: "5 minutos: 1000 velas", available: true },
-      { text: "15 minutos: 4000 velas", available: true },
-      { text: "1 hora: 1000 velas", available: true },
+      { text: "15 sesiones por mes", available: true, realistic: true },
+      { text: "1 minuto: 50000 velas", available: true, realistic: true },
+      { text: "5 minutos: 1000 velas", available: true, realistic: true },
+      { text: "15 minutos: 4000 velas", available: true, realistic: true },
+      { text: "1 hora: 1000 velas", available: true, realistic: true },
     ],
-    price: "$15.99/mo",
+    price: "$15.99",
   },
 ];
 
@@ -140,24 +158,24 @@ export default function Plans() {
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center p-10">
+    <div className="min-h-full w-full flex flex-col items-center justify-center p-10">
       <div className="text-center mb-10">
-        <h1 className="text-4xl font-bold">Choose Your Plan</h1>
+        <h1 className="text-4xl font-bold">Pricing Plans</h1>
+        <h2 className="text-lg text-muted-foreground">
+          Choose the plan that fits your needs and start your trading journey
+          with us.
+        </h2>
       </div>
-      <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-8 grid-cols-1 sm:grid-cols-2  md:grid-cols-2 lg:grid-cols-3 ">
         {plans.map((plan) => (
           <Card
             key={plan.id}
             isHoverable
             variant="bordered"
-            className={`hover:shadow-lg transition-shadow duration-300 group p-6 rounded-lg bg-black bg-opacity-30 backdrop-blur-lg hover:scale-105 ${
-              theme === "dark"
-                ? "bg-gradient-to-r from-violet-800 to-black"
-                : "bg-gradient-to-r from-white to-purple-400"
-            }`}
+            className=" p-6 rounded-lg  bg-opacity-30 flex items-center justify-between flex-col "
           >
-            <CardHeader className="flex items-center justify-between">
-              <div className="flex items-center">
+            <CardHeader className="flex items-center justify-between gap-2">
+              <div className="flex items-center flex-row">
                 <h2 className="text-2xl font-semibold">{plan.name}</h2>
                 {plan.id === currentPlanId && (
                   <Chip color="success" size="md" className="ml-2">
@@ -165,31 +183,33 @@ export default function Plans() {
                   </Chip>
                 )}
               </div>
-              <Chip color="default" size="lg">
-                {plan.price}
-              </Chip>
+              <span className="text-4xl text-bold font-bold">{plan.price}</span>
+              <span className="text-xl text-muted-foreground">per month</span>
             </CardHeader>
-            <CardBody className="p-4">
+            <CardContent className="p-4h  flex h-full justify-start flex-col">
               <ul className="list-none pl-0">
                 {plan.features.map((feature, index) => (
-                  <li key={index} className="mb-2 flex items-center">
+                  <li
+                    key={index}
+                    className={`mb-2 flex items-center ${
+                      feature.realistic ? "pl-8" : ""
+                    }`}
+                  >
                     {feature.available ? (
-                      <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2" />
+                      <CheckIcon className="h-5 w-5 mr-2" />
                     ) : (
-                      <XCircleIcon className="h-5 w-5 text-red-500 mr-2" />
+                      <XMarkIcon className="h-5 w-5 mr-2" />
                     )}
                     <span>{feature.text}</span>
                   </li>
                 ))}
               </ul>
-            </CardBody>
+            </CardContent>
             {plan.id !== currentPlanId && (
               <CardFooter className="flex justify-center">
                 <Button
-                  className="group-hover:shadow-sm group-hover:shadow-purple-500 transition-all duration-300 transform hover:scale-105"
                   size="lg"
-                  variant="ghost"
-                  color="secondary"
+                  color="primary"
                   onClick={() => handleSubscribe(plan.id)}
                 >
                   {`Choose ${plan.name}`}

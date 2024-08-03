@@ -37,7 +37,7 @@ export async function PUT(req, { params }) {
           profit: order.profit,
           tp: parseFloat(order.tp),
           sl: parseFloat(order.sl),
-          exitDate: new Date(order.exitDate * 1000),
+          exitDate: order.exitDate,
         },
       });
     }
@@ -52,7 +52,7 @@ export async function PUT(req, { params }) {
     const totalOperations = operations.length;
     const profitLoss = operations.reduce(
       (acc, op) => acc + (op.profit || 0),
-      0,
+      0
     );
     const averageGain = totalOperations > 0 ? profitLoss / totalOperations : 0;
     const winRate =
@@ -104,7 +104,7 @@ export async function PUT(req, { params }) {
         headers: {
           "Content-Type": "application/json",
         },
-      },
+      }
     );
   }
 }

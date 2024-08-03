@@ -53,8 +53,32 @@ export default function SessionPage() {
   const [lineSeries, setLineSeries] = useState(null);
   const [priceLines, setPriceLines] = useState([]);
   const { theme, setTheme } = useTheme();
-  console.log(theme);
   const [timeZone, setTimeZone] = useState("Europe/London");
+  const [chartColors, setChartColors] = useState({
+    background: theme === "dark" ? "#27272A" : "#efefef",
+    textColor: theme === "dark" ? "#efefef" : "#27272A",
+    verticalLines: theme === "dark" ? "#414141" : "#a1a1a1",
+    horizontalLines: theme === "dark" ? "#414141" : "#a1a1a1",
+    border: "#313131",
+    upColor: "#26a69a",
+    downColor: "#ef5350",
+    wickUp: "#26a69a",
+    wickDown: "#ef5350",
+  });
+
+  const resetDefaultChartColors = () => {
+    setChartColors({
+      background: theme === "dark" ? "#27272A" : "#efefef",
+      textColor: theme === "dark" ? "#efefef" : "#27272A",
+      verticalLines: theme === "dark" ? "#414141" : "#a1a1a1",
+      horizontalLines: theme === "dark" ? "#414141" : "#a1a1a1",
+      border: "#313131",
+      upColor: "#26a69a",
+      downColor: "#ef5350",
+      wickUp: "#26a69a",
+      wickDown: "#ef5350",
+    });
+  };
 
   // Define `timer` using useRef
   const timerRef = useRef(null);
@@ -118,7 +142,7 @@ export default function SessionPage() {
         if (limit) limit += 5000;
         else limit = 5000;
         const response = await fetch(
-          `/api/data?start=${start}&end=${end}&limit=${limit}&offset=${fetchingOffset}&pair=${pair}&interval=${timeframe}`,
+          `/api/data?start=${start}&end=${end}&limit=${limit}&offset=${fetchingOffset}&pair=${pair}&interval=${timeframe}`
         );
 
         if (!response.ok) {
@@ -154,13 +178,13 @@ export default function SessionPage() {
       } catch (error) {
         console.error(
           `Failed to load data by date range (attempt ${attempt + 1}):`,
-          error,
+          error
         );
         attempt++;
 
         if (attempt >= maxAttempts) {
           throw new Error(
-            "Failed to load data by date range after multiple attempts",
+            "Failed to load data by date range after multiple attempts"
           );
         }
 
@@ -360,8 +384,8 @@ export default function SessionPage() {
       setUpdateCount(updateCount + 1);
       setAllCandles((prevCandles) =>
         prevCandles.map((candle, index) =>
-          index === prevCandles.length - 1 ? updatedCandle : candle,
-        ),
+          index === prevCandles.length - 1 ? updatedCandle : candle
+        )
       );
     }
 
@@ -584,7 +608,7 @@ export default function SessionPage() {
 
   function getBusinessDayBeforeCurrentAt(date, daysDelta) {
     const dateWithDelta = new Date(
-      Date.UTC(date.year, date.month - 1, date.day - daysDelta, 0, 0, 0, 0),
+      Date.UTC(date.year, date.month - 1, date.day - daysDelta, 0, 0, 0, 0)
     );
     return {
       year: dateWithDelta.getFullYear(),
@@ -648,6 +672,7 @@ export default function SessionPage() {
                   setPriceLines={setPriceLines}
                   orders={orders}
                   setOrders={setOrders}
+                  chartColors={chartColors}
                   //handleRangeChange={handleRangeChange} // Agregado el handleRangeChange
                 />
                 <ChartPlayer
@@ -678,6 +703,9 @@ export default function SessionPage() {
                   currentCandleDate={currentCandle.time}
                   addPriceLines={addPriceLines}
                   pair={pair}
+                  chartColors={chartColors}
+                  setChartColors={setChartColors}
+                  resetDefaultChartColors={resetDefaultChartColors}
                 />
               </div>
             </ResizablePanel>
@@ -700,6 +728,7 @@ export default function SessionPage() {
               setPriceLines={setPriceLines}
               addPriceLines={addPriceLines}
               currentCandleDate={currentCandle.time}
+              currentCandle={currentCandle}
             />
           </div>
         </ResizablePanel>

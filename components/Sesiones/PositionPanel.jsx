@@ -27,6 +27,7 @@ export default function PositionPanel({
   setPriceLines,
   addPriceLines,
   currentCandleDate,
+  currentCandle,
 }) {
   const [history, setHistory] = useState([]);
   const [fetchingPositions, setFetchingPositions] = useState(true);
@@ -145,6 +146,7 @@ export default function PositionPanel({
                         priceLines={priceLines}
                         setPriceLines={setPriceLines}
                         currentCandleDate={currentCandleDate}
+                        currentCandle={currentCandle}
                       />
                     ) : (
                       <div
