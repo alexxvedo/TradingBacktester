@@ -54,7 +54,6 @@ export default function PositionPanel({
           var historyPositions = [];
           var currentPositions = [];
           data.map((position) => {
-            console.log(position);
             if (position.exitPrice) {
               historyPositions.push({
                 id: position.id,
@@ -78,7 +77,6 @@ export default function PositionPanel({
                 sl: position.sl,
                 entryDate: position.entryDate,
               });
-              console.log("Anadiendo priceLine");
               addPriceLines(position);
             }
           });

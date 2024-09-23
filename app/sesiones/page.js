@@ -157,7 +157,6 @@ export default function Sesiones() {
         }
 
         const subscription = await res.json();
-        console.log(subscription);
         setSubscription(subscription);
       } catch (error) {
         console.error("Error fetching subscription:", error);
@@ -180,7 +179,6 @@ export default function Sesiones() {
         user?.createdAt,
         sessions
       );
-      console.log("Session count: ", sessionCount);
       setAvaliableSessions(sessionCount);
     }
   }, [subscription]);
@@ -219,12 +217,6 @@ export default function Sesiones() {
     const { startOfPeriod, endOfPeriod } = getSubscriptionPeriod(creationDate);
 
     const sessionsThisMonth = sessions.filter((session) => {
-      console.log(
-        "Comparando: ",
-        new Date(session.createdAt),
-        startOfPeriod,
-        endOfPeriod
-      );
       return (
         new Date(session.createdAt) >= startOfPeriod &&
         new Date(session.createdAt) < endOfPeriod
@@ -352,17 +344,6 @@ export default function Sesiones() {
         ).toISOString(),
       ]);
 
-      console.log(
-        title,
-        description,
-        accountSize,
-        startDate,
-        endDate,
-        pair,
-        timeframeOptions[timeframe],
-        realistic
-      );
-
       const res = await fetch("/api/sessions", {
         method: "POST",
         headers: {
@@ -468,11 +449,6 @@ export default function Sesiones() {
             </div>
           </div>
           <div className="flex gap-2 items-center justify-center">
-            <Link href="/plan">
-              <Button className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white">
-                Plans
-              </Button>
-            </Link>
             <Drawer>
               <DrawerTrigger asChild>
                 <Button className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white">
@@ -608,7 +584,6 @@ export default function Sesiones() {
                             <PopoverContent className="w-auto p-0">
                               <Calendar
                                 mode="single"
-                                initialFocus
                                 defaultMonth={
                                   dates.start
                                     ? new Date(
@@ -733,7 +708,6 @@ export default function Sesiones() {
                                     .split("T")[0];
                                   return !availableDates.includes(dateString);
                                 }}
-                                initialFocus
                               />
                             </PopoverContent>
                           </Popover>

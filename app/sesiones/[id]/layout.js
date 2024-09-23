@@ -2,7 +2,7 @@ import "@/app/globals.css";
 
 export const metadata = {
   title: "Backtester",
-  description: "Sesiones",
+  description: "Sesiones Id",
 };
 
 export default function SessionIdLayout({ children }) {

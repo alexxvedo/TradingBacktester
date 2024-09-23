@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
-import PositionCreator from "@/components/PositionCreator";
+import PositionCreator from "@/components/Sesiones/PositionCreator/PositionCreator";
 import { Button } from "@/components/ui/button";
 import {
   ResizableHandle,
@@ -65,6 +65,7 @@ export default function SessionPage() {
     wickUp: "#26a69a",
     wickDown: "#ef5350",
   });
+  const [chartDirection, setChartDirection] = useState("forward");
 
   const resetDefaultChartColors = () => {
     setChartColors({
@@ -458,10 +459,8 @@ export default function SessionPage() {
         setRecoverCandleIndex(data.currentCandleIndex);
 
         const storedData = await localforage.getItem(`sessionData_${id}`);
-        console.log("Stored data: ", storedData);
 
         if (storedData && storedData.length > 0) {
-          console.log(storedData.length, data.currentCandleIndex);
           setInitialData(storedData);
 
           if (data.currentCandleIndex + 2000 >= storedData.length) {
@@ -499,12 +498,35 @@ export default function SessionPage() {
     }
   }, [id]);
 
+  const reverseChart = () => {
+    if (
+      !initialData ||
+      initialData.length === 0 ||
+      updateCount == 0 ||
+      isPaused
+    ) {
+      return;
+    }
+
+    const currentCandles = seriesRef.current.data(); // Obtén todas las velas actuales
+    if (currentCandles.length > 0) {
+      currentCandles.pop(); // Elimina la última vela
+      seriesRef.current.setData(currentCandles); // Actualiza la serie con las velas restantes
+      setAllCandles(currentCandles); // Actualiza el estado con las velas restantes
+      setCandleIndex(candleIndex - 1); // Ajusta el índice de la vela
+      setUpdateCount(updateCount - 1); // Ajusta el contador de actualizaciones
+    }
+  };
   useEffect(() => {
     if (!recoverSession && !isFullyFinished) {
-      const intervalID = setInterval(() => {
-        updateChart();
+      const chartInteval = setInterval(() => {
+        if (chartDirection === "forward") {
+          updateChart();
+        } else if (chartDirection === "back") {
+          reverseChart();
+        }
       }, 1000 / candlePerSecond);
-      return () => clearInterval(intervalID);
+      return () => clearInterval(chartInteval);
     } else if (initialData.length != 0 && !isFullyFinished) {
       const candles = getFinalCandles(recoverCandleIndex);
 
@@ -527,22 +549,12 @@ export default function SessionPage() {
     candlePerSecond,
     recoverCandleIndex,
     recoverSession,
+    chartDirection,
   ]);
 
   useEffect(() => {
     updateChartTimezone();
   }, [timeZone]);
-
-  const handleResize = (sizes, type) => {
-    if (type === "vertical") {
-      if (sizes[1] < 11) {
-        setPanelOpen(false);
-      } else if (sizes[1] > 11) setPanelOpen(true);
-    } else if (type === "horizontal") {
-      if (sizes[1] < 11) setPositionCreatorOpen(false);
-      else if (sizes[1] > 11) setPositionCreatorOpen(true);
-    }
-  };
 
   const togglePause = () => setIsPaused(!isPaused);
 
@@ -626,30 +638,6 @@ export default function SessionPage() {
       close: item.close,
     }));
   };
-  /*
-  const handleRangeChange = () => {
-    if (timerRef.current !== null) {
-      clearTimeout(timerRef.current);
-    }
-    timerRef.current = setTimeout(() => {
-      const logicalRange = chartRef.current
-        .timeScale()
-        .getVisibleLogicalRange();
-      console.log(logicalRange);
-      if (logicalRange !== null) {
-        const fromIndex = Math.max(0, Math.floor(logicalRange.from) - 10); // Añade 10 velas antes
-        const toIndex = Math.min(
-          initialData.length - 1,
-          Math.ceil(logicalRange.to) + 10,
-        ); // Añade 10 velas después
-        const visibleData = initialData.slice(fromIndex, toIndex + 1);
-        const candlestickData = convertToCandlestickData(visibleData);
-        console.log(candlestickData);
-        seriesRef.current.setData(candlestickData);
-      }
-      timerRef.current = null;
-    }, 100);
-    };*/
 
   return (
     <div className="flex flex-col min-h-[100%] min-w-full p-4 border-2 rounded-lg">
@@ -685,6 +673,7 @@ export default function SessionPage() {
                   timeZone={timeZone}
                   setTimeZone={setTimeZone}
                   theme={theme}
+                  setChartDirection={setChartDirection}
                 />
               </div>
             </ResizablePanel>

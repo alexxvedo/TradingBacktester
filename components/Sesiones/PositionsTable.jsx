@@ -56,7 +56,7 @@ export default function PositionsTable({
 
         if (res.ok) {
           setOrders((prevOrders) =>
-            prevOrders.filter((order) => order.id !== key),
+            prevOrders.filter((order) => order.id !== key)
           );
           setHistory((prevHistory) => [...prevHistory, newOrder]);
           saveSessionData();
@@ -81,13 +81,12 @@ export default function PositionsTable({
         console.error("Error closing operation:", error);
       }
     },
-    [orders, saveSessionData, currentCandleDate, lineSeries, priceLines],
+    [orders, saveSessionData, currentCandleDate, lineSeries, priceLines]
   );
 
   useEffect(() => {
     if (!currentCandle) return;
 
-    console.log("Comprobando sl tp");
     const ordersToClose = [];
 
     orders.forEach((order) => {
@@ -127,7 +126,7 @@ export default function PositionsTable({
 
       if (res.ok) {
         setOrders((prevOrders) =>
-          prevOrders.map((o) => (o.id === order.id ? order : o)),
+          prevOrders.map((o) => (o.id === order.id ? order : o))
         );
         setEditingOrder(null);
         saveSessionData();
@@ -143,8 +142,8 @@ export default function PositionsTable({
     const value = e.target.value;
     setOrders((prevOrders) =>
       prevOrders.map((order) =>
-        order.id === orderId ? { ...order, [field]: value } : order,
-      ),
+        order.id === orderId ? { ...order, [field]: value } : order
+      )
     );
   };
 
@@ -158,7 +157,7 @@ export default function PositionsTable({
               orderId &&
             priceLine._private__priceLine._private__options.lineType ===
               lineType
-          ),
+          )
       );
       const newPriceLine = {
         ...priceLine._private__priceLine._private__options,
@@ -191,7 +190,9 @@ export default function PositionsTable({
           {orders.map((order, index) => (
             <TableRow key={index}>
               <TableCell>
-                {`${new Date(order.entryDate).toLocaleDateString()}, ${new Date(order.entryDate).toLocaleTimeString()}`}
+                {`${new Date(order.entryDate).toLocaleDateString()}, ${new Date(
+                  order.entryDate
+                ).toLocaleTimeString()}`}
               </TableCell>
               <TableCell>{order.type.toUpperCase()}</TableCell>
               <TableCell>{order.entryPrice.toFixed(4)}</TableCell>

@@ -14,19 +14,24 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  PieChart,
+  Pie,
+  Cell,
+  AreaChart,
+  Area,
   LineChart,
   Line,
   CartesianGrid,
   XAxis,
   YAxis,
   Tooltip,
-  ReferenceLine,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
 } from "recharts";
+
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
@@ -37,6 +42,8 @@ const StatisticsPage = () => {
   const [selectedSession, setSelectedSession] = useState("all");
   const [stats, setStats] = useState({});
   const { isLoaded, userId } = useAuth();
+  const [balances, setBalances] = useState([]);
+  const [currentSession, setCurrentSession] = useState(null);
 
   useEffect(() => {
     if (userId) {
@@ -56,8 +63,35 @@ const StatisticsPage = () => {
     try {
       const response = await fetch(`/api/operations?sessionId=${sessionId}`);
       const data = await response.json();
+      // Group operations by date and sum the profits of all operations of each day
+      const groupedOperations = data.reduce((acc, op) => {
+        const date = new Date(op.exitDate).toLocaleDateString();
+        if (!acc[date]) {
+          acc[date] = { date: op.exitDate, totalProfit: 0 };
+        }
+        acc[date].totalProfit += op.profit;
+        return acc;
+      }, {});
+
+      // Calculate the balance over time, starting with the initial account size
+      let currentBalance = session.accountSize;
+      const calculatedBalances = [
+        {
+          date: new Date(session.startDate).toLocaleDateString(),
+          balance: currentBalance,
+        },
+        ...Object.values(groupedOperations).map((group) => {
+          currentBalance += group.totalProfit;
+          return {
+            date: new Date(group.date).toLocaleDateString(),
+            balance: currentBalance,
+          };
+        }),
+      ];
+
+      setBalances(calculatedBalances);
       setOperations(data);
-      const session = sessions.find((session) => session.id === sessionId);
+      setCurrentSession(sessions.find((session) => session.id === sessionId));
       console.log(session);
       calculateSessionStats(data, session.accountSize);
     } catch (error) {
@@ -142,27 +176,57 @@ const StatisticsPage = () => {
     });
   };
 
+  const minBalance = Math.min(...balances.map((b) => b.balance));
+  const maxBalance = Math.max(...balances.map((b) => b.balance));
+  const marginValue = minBalance - Math.floor(minBalance * 0.001);
+
+  const singlePoint = balances.length === 1;
+  const padding = (maxBalance - minBalance) * 0.1 || 0.1;
+
+  console.log(balances[balances.length - 1]);
+
+  if (currentSession !== null) {
+    const startDate = new Date(currentSession.startDate).toLocaleDateString();
+    const endDate =
+      balances.length > 1
+        ? balances[balances.length - 1].date
+        : new Date(
+            new Date(sesion.startDate).getTime() + 24 * 60 * 60 * 1000
+          ).toLocaleDateString();
+  } else {
+    const startDate = null;
+    const endDate = null;
+  }
+
+  const chartConfig = {
+    balance: {
+      label: "Balance",
+      color: "hsl(var(--chart-1))",
+    },
+  };
+
+  const wonLostData = [
+    { name: "Won", value: stats.winningOperations || 0 },
+    { name: "Lost", value: stats.losingOperations || 0 },
+  ];
+
   const handleSessionChange = (value) => {
     setSelectedSession(value);
   };
 
   const formatValue = (value) => {
     const formattedValue = parseFloat(value).toFixed(2);
-    return value < 0 ? (
-      <span className="text-red-500">{formattedValue}</span>
-    ) : (
-      <span className="text-green-500">{formattedValue}</span>
-    );
+    return formattedValue;
   };
 
   return (
     userId && (
-      <div className="p-6">
-        <div className="min-h-[5%] w-full flex justify-between items-center">
-          <h2 className="text-2xl font-bold">Analytics</h2>
-          <div className="flex gap-2">
-            <Select onValueChange={handleSessionChange}>
-              <SelectTrigger>
+      <main className="flex flex-col w-full h-full p-4 ">
+        <div className="flex items-center gap-4">
+          <h1 className="text-2xl font-bold">Analytics</h1>
+          <div className="flex items-center gap-2 ml-auto">
+            <Select defaultValue="all" onValueChange={handleSessionChange}>
+              <SelectTrigger className="w-auto">
                 <SelectValue placeholder="Select a session" />
               </SelectTrigger>
               <SelectContent>
@@ -178,176 +242,320 @@ const StatisticsPage = () => {
             </Select>
           </div>
         </div>
-        <hr className="my-4 w-full" />
+        <hr className="w-full my-4 " />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid gap-6">
           <Card>
             <CardHeader>
               <CardTitle>General Statistics</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-4 grid-cols-2 gap-2">
-                <span>Balance Inicial:</span>
-                <span>{formatValue(stats.initialBalance)}</span>
-                <span>Balance Final:</span>
-                <span>{formatValue(stats.finalBalance)}</span>
-                <span>Ganancia/Pérdida Total:</span>
-                <span>{formatValue(stats.totalProfitLoss)}</span>
-                <span>Número Total de Operaciones:</span>
-                <span>{stats.totalOperations}</span>
+            <CardContent className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+              <div>
+                <div className="text-muted-foreground">Initial Balance:</div>
+                <div className={`text-2xl font-semibold `}>
+                  ${formatValue(stats.initialBalance)}
+                </div>
+              </div>
+              <div>
+                <div className="text-muted-foreground">Final Balance:</div>
+                <div
+                  className={`text-2xl font-semibold ${
+                    formatValue(stats.finalBalance) >= 0
+                      ? "text-green-500"
+                      : "text-red-500"
+                  }`}
+                >
+                  ${formatValue(stats.finalBalance)}
+                </div>
+              </div>
+              <div>
+                <div className="text-muted-foreground">Total Gain/Loss:</div>
+                <div
+                  className={`text-2xl font-semibold ${
+                    formatValue(stats.totalProfitLoss) >= 0
+                      ? "text-green-500"
+                      : "text-red-500"
+                  }`}
+                >
+                  ${formatValue(stats.totalProfitLoss)}
+                </div>
+              </div>
+              <div>
+                <div className="text-muted-foreground">
+                  Total Number of Trades:
+                </div>
+                <div className="text-2xl font-semibold">
+                  {stats.totalOperations}
+                </div>
               </div>
             </CardContent>
           </Card>
-
           <Card>
             <CardHeader>
               <CardTitle>Performance Statistics</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-2">
-                <span>Número de Operaciones Ganadoras:</span>
-                <span>{stats.winningOperations}</span>
-                <span>Número de Operaciones Perdedoras:</span>
-                <span>{stats.losingOperations}</span>
-                <span>Porcentaje de Operaciones Ganadoras:</span>
-                <span>{formatValue(stats.winningPercentage)}%</span>
-                <span>Porcentaje de Operaciones Perdedoras:</span>
-                <span>{formatValue(stats.losingPercentage)}%</span>
-                <span>Ganancia Promedio por Operación:</span>
-                <span>{formatValue(stats.averageWin)}</span>
-                <span>Pérdida Promedio por Operación:</span>
-                <span>{formatValue(stats.averageLoss)}</span>
-                <span>Ratio Ganancia/Pérdida:</span>
-                <span>{formatValue(stats.ratioWinLoss)}</span>
+            <CardContent className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+              <div>
+                <div className="text-muted-foreground">
+                  Number of Winning Trades:
+                </div>
+                <div className="text-2xl font-semibold">
+                  {stats.winningOperations}
+                </div>
+              </div>
+              <div>
+                <div className="text-muted-foreground">
+                  Number of Losing Trades:
+                </div>
+                <div className="text-2xl font-semibold">
+                  {stats.losingOperations}
+                </div>
+              </div>
+              <div>
+                <div className="text-muted-foreground">
+                  Percentage of Winning Trades:
+                </div>
+                <div
+                  className={`text-2xl font-semibold ${
+                    formatValue(stats.winningPercentage) >= 50
+                      ? "text-green-500"
+                      : "text-red-500"
+                  }`}
+                >
+                  {formatValue(stats.winningPercentage)}%
+                </div>
+              </div>
+              <div>
+                <div className="text-muted-foreground">
+                  Percentage of Losing Trades:
+                </div>
+                <div
+                  className={`text-2xl font-semibold ${
+                    formatValue(stats.losingPercentage) >= 50
+                      ? "text-green-500"
+                      : "text-red-500"
+                  }`}
+                >
+                  {formatValue(stats.losingPercentage)}%
+                </div>
+              </div>
+              <div>
+                <div className="text-muted-foreground">
+                  Average Gain per Trade:
+                </div>
+                <div
+                  className={`text-2xl font-semibold ${
+                    formatValue(stats.averageWin) >= 0
+                      ? "text-green-500"
+                      : "text-red-500"
+                  }`}
+                >
+                  ${formatValue(stats.averageWin)}
+                </div>
+              </div>
+              <div>
+                <div className="text-muted-foreground">
+                  Average Loss per Trade:
+                </div>
+                <div
+                  className={`text-2xl font-semibold ${
+                    formatValue(stats.averageLoss) >= 0
+                      ? "text-green-500"
+                      : "text-red-500"
+                  }`}
+                >
+                  ${formatValue(stats.averageLoss)}
+                </div>
+              </div>
+              <div>
+                <div className="text-muted-foreground">Gain/Loss Ratio:</div>
+                <div
+                  className={`text-2xl font-semibold ${
+                    formatValue(stats.ratioWinLoss) >= 0
+                      ? "text-green-500"
+                      : "text-red-500"
+                  }`}
+                >
+                  {formatValue(stats.ratioWinLoss)}
+                </div>
               </div>
             </CardContent>
           </Card>
-
           <Card>
             <CardHeader>
               <CardTitle>Drawdown and Duration</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-2">
-                <span>Drawdown Máximo:</span>
-                <span>{formatValue(stats.maxDrawdown)}</span>
-                <span>Duración Media de las Operaciones:</span>
-                <span>{formatValue(stats.averageDuration)}</span>
-                <span>Mejor Operación (por Ganancia):</span>
-                <span>{formatValue(stats.bestTrade)}</span>
-                <span>Peor Operación (por Pérdida):</span>
-                <span>{formatValue(stats.worstTrade)}</span>
+            <CardContent className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+              <div>
+                <div className="text-muted-foreground">Maximum Drawdown:</div>
+                <div
+                  className={`text-2xl font-semibold ${
+                    0 >= 0 ? "text-green-500" : "text-red-500"
+                  }`}
+                >
+                  ${formatValue(stats.maxDrawdown)}
+                </div>
+              </div>
+
+              <div>
+                <div className="text-muted-foreground">
+                  Best Trade (by Gain):
+                </div>
+                <div
+                  className={`text-2xl font-semibold ${
+                    143 >= 0 ? "text-green-500" : "text-red-500"
+                  }`}
+                >
+                  ${formatValue(stats.bestTrade)}
+                </div>
+              </div>
+              <div>
+                <div className="text-muted-foreground">
+                  Worst Trade (by Loss):
+                </div>
+                <div
+                  className={`text-2xl font-semibold ${
+                    -31 >= 0 ? "text-green-500" : "text-red-500"
+                  }`}
+                >
+                  ${formatValue(stats.worstTrade)}
+                </div>
               </div>
             </CardContent>
           </Card>
-
           <Card>
             <CardHeader>
               <CardTitle>Volume Statistics</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-2">
-                <span>Volumen Total Operado:</span>
-                <span>{formatValue(stats.totalVolume)}</span>
-                <span>Volumen Promedio por Operación:</span>
-                <span>{formatValue(stats.averageVolume)}</span>
+            <CardContent className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+              <div>
+                <div className="text-muted-foreground">
+                  Total Trading Volume (lots):
+                </div>
+                <div
+                  className={`text-2xl font-semibold ${
+                    25 >= 0 ? "text-green-500" : "text-red-500"
+                  }`}
+                >
+                  {formatValue(stats.totalVolume)}
+                </div>
+              </div>
+              <div>
+                <div className="text-muted-foreground">
+                  Average Trade Volume (lots):
+                </div>
+                <div
+                  className={`text-2xl font-semibold ${
+                    1 >= 0 ? "text-green-500" : "text-red-500"
+                  }`}
+                >
+                  {formatValue(stats.averageVolume)}
+                </div>
               </div>
             </CardContent>
           </Card>
-
           <Card>
             <CardHeader>
-              <CardTitle>Balance Over Time</CardTitle>
+              <CardTitle>Performance Chart</CardTitle>
             </CardHeader>
             <CardContent>
-              <LineChart
-                width={500}
-                height={300}
-                data={operations}
-                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
-                <ReferenceLine
-                  y={stats.initialBalance}
-                  stroke="gray"
-                  strokeDasharray="3 3"
-                />
-                <Line
-                  type="monotone"
-                  dataKey="balance"
-                  stroke="#8884d8"
-                  dot={{ r: 3 }}
-                />
-              </LineChart>
-            </CardContent>
-          </Card>
+              <div className="grid gap-6">
+                {/* Gráfico de operaciones ganadas vs. operaciones perdidas */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Operaciones Ganadas vs Perdidas</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <PieChart width={400} height={400}>
+                      <Pie
+                        data={wonLostData}
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={150}
+                        fill="#8884d8"
+                        dataKey="value"
+                        label
+                      >
+                        {wonLostData.map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={COLORS[index % COLORS.length]}
+                          />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </CardContent>
+                </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Operation Types</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <BarChart
-                width={500}
-                height={300}
-                data={[
-                  {
-                    name: "Compras",
-                    value: operations.filter((op) => op.type === "buy").length,
-                  },
-                  {
-                    name: "Ventas",
-                    value: operations.filter((op) => op.type === "sell").length,
-                  },
-                ]}
-                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="value" fill="#8884d8" />
-              </BarChart>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Winning vs Losing Trades</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <PieChart width={500} height={300}>
-                <Pie
-                  data={[
-                    { name: "Ganadoras", value: stats.winningOperations },
-                    { name: "Perdedoras", value: stats.losingOperations },
-                  ]}
-                  cx={200}
-                  cy={150}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                  label
-                >
-                  {[
-                    { name: "Ganadoras", value: stats.winningOperations },
-                    { name: "Perdedoras", value: stats.losingOperations },
-                  ].map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
+                {/* Gráfico de cambios de balance 
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Cambios en el Balance</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ChartContainer config={chartConfig}>
+                      <AreaChart
+                        accessibilityLayer
+                        data={balances}
+                        margin={{
+                          top: 20,
+                          left: 12,
+                          right: 12,
+                        }}
+                      >
+                        <CartesianGrid vertical={false} />
+                        <XAxis
+                          dataKey="date"
+                          tickLine={false}
+                          axisLine={false}
+                          tickMargin={8}
+                          tickFormatter={(value) => value.slice(0, 5)}
+                          domain={[startDate, endDate]}
+                        />
+                        <YAxis
+                          domain={[
+                            singlePoint ? minBalance - padding : marginValue,
+                            singlePoint ? maxBalance + padding : "auto",
+                          ]}
+                        />
+                        <Tooltip
+                          cursor={false}
+                          content={<ChartTooltipContent indicator="line" />}
+                        />
+                        <Area
+                          dataKey="balance"
+                          type="monotone"
+                          stroke="var(--color-balance)"
+                          strokeWidth={2}
+                          fill="var(--color-balance)"
+                          dot={{
+                            fill: "var(--color-balance)",
+                          }}
+                          activeDot={{
+                            r: 6,
+                          }}
+                        />
+                        <ReferenceLine
+                          y={
+                            balances && balances.length > 0
+                              ? balances[0].balance
+                              : ""
+                          }
+                          stroke="gray"
+                          strokeDasharray="3 3"
+                          label={{ value: "Initial Balance", fill: "gray" }}
+                        />
+                      </AreaChart>
+                    </ChartContainer>
+                  </CardContent>
+                </Card>
+                */}
+              </div>
             </CardContent>
           </Card>
         </div>
-      </div>
+      </main>
     )
   );
 };

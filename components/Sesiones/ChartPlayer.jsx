@@ -28,12 +28,16 @@ export default function ChartPlayer({
   timeZones,
   timeZone,
   setTimeZone,
-
   theme,
+  setChartDirection,
 }) {
   return (
     <div className="flex items-center justify-center gap-4 mt-4 max-h-[5%]">
-      <Button size="icon" variant="outline">
+      <Button
+        size="icon"
+        variant="outline"
+        onClick={() => setChartDirection("back")}
+      >
         <Image
           src={RewindIcon}
           alt="Rewind"
@@ -57,7 +61,11 @@ export default function ChartPlayer({
         step={1}
         onValueChange={setCandlePerSecond}
       />
-      <Button variant="outline" size="icon">
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={() => setChartDirection("forward")}
+      >
         <Image
           src={FastForwardIcon}
           alt="Fast Forward"
